@@ -6,6 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>LISTeditor</title>
+  <style id="col-hide-styles"></style>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -460,7 +461,7 @@
       colWidths = headers.map((h, i) => {
         const key  = h || `__col${i}`;
         const pref = prefs[key];
-        if (typeof pref === 'number' && pref >= 40 && pref <= 400) return pref;
+        if (typeof pref === 'number' && pref >= 0 && pref <= 400) return pref;
         return COL_W_PRESET[i] ?? DEFAULT_W;
       });
     }
@@ -550,6 +551,16 @@
         col.style.width = w + 'px';
         cg.appendChild(col);
       });
+      updateHideStyles();
+    }
+
+    /* 幅 0 の列を CSS で完全非表示 */
+    function updateHideStyles() {
+      const css = colWidths
+        .map((w, i) => w === 0 ? i : -1).filter(i => i >= 0)
+        .map(i => `#tbl th:nth-child(${i+1}),#tbl td:nth-child(${i+1}){width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:none!important;overflow:hidden}`)
+        .join('');
+      document.getElementById('col-hide-styles').textContent = css;
     }
 
     function buildHeader() {
@@ -586,6 +597,7 @@
        列幅更新 (リアルタイム)
     ═══════════════════════════════════ */
     function setColWidth(colIndex, width) {
+      const wasZero = colWidths[colIndex] === 0;
       colWidths[colIndex] = width;
 
       /* colgroup の該当列を更新 */
@@ -600,6 +612,9 @@
           document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = left);
         }
       }
+
+      /* 非表示状態が変わったときだけ CSS を更新 */
+      if (wasZero !== (width === 0)) updateHideStyles();
 
       schedSaveWidths();
     }
@@ -793,12 +808,13 @@
 
         const slider = document.createElement('input');
         slider.type = 'range'; slider.className = 'settings-slider';
-        slider.min = 40; slider.max = 400; slider.step = 5;
+        slider.min = 0; slider.max = 400; slider.step = 5;
         slider.value = curW;
 
         const valEl = document.createElement('span');
         valEl.className = 'settings-val';
-        valEl.textContent = curW + 'px';
+        valEl.textContent = curW === 0 ? '非表示' : curW + 'px';
+        if (curW === 0) valEl.style.color = '#f78166';
 
         const resetBtn = document.createElement('button');
         resetBtn.className = 'settings-reset-btn';
@@ -806,13 +822,15 @@
 
         slider.addEventListener('input', () => {
           const w = +slider.value;
-          valEl.textContent = w + 'px';
+          valEl.textContent = w === 0 ? '非表示' : w + 'px';
+          valEl.style.color = w === 0 ? '#f78166' : '#58a6ff';
           setColWidth(i, w);
         });
 
         resetBtn.addEventListener('click', () => {
           slider.value = defaultW;
-          valEl.textContent = defaultW + 'px';
+          valEl.textContent = defaultW === 0 ? '非表示' : defaultW + 'px';
+          valEl.style.color = defaultW === 0 ? '#f78166' : '#58a6ff';
           setColWidth(i, defaultW);
         });
 
@@ -835,6 +853,7 @@
       for (let p = 0; p < 3; p++) {
         document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = pl[p] + 'px');
       }
+      updateHideStyles();
       schedSaveWidths();
       openSettings(); // リストを更新
     }
