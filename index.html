@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>LISTeditor</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      background: #0d1117;
+    }
+
+    /* ── 縦向きのとき回転を促す ── */
+    #portrait-msg {
+      display: none;
+      position: fixed; inset: 0;
+      background: #0d1117;
+      flex-direction: column;
+      justify-content: center; align-items: center;
+      gap: 16px; z-index: 200;
+    }
+    #portrait-msg .icon { font-size: 48px; }
+    #portrait-msg p { color: #c9d1d9; font-size: 16px; }
+    #portrait-msg small { color: #8b949e; font-size: 12px; }
+
+    @media (orientation: portrait) {
+      #portrait-msg { display: flex; }
+      #app { visibility: hidden; }
+    }
+
+    /* ── アプリ全体 ── */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      color: #c9d1d9;
+    }
+
+    /* ── ツールバー ── */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 10px;
+      height: 34px;
+      background: #161b22;
+      border-bottom: 1px solid #21262d;
+      flex-shrink: 0;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+    #toolbar-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: #58a6ff;
+      flex-shrink: 0;
+    }
+    #info {
+      color: #8b949e;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #filter-badge {
+      color: #f78166;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    #btn-clear {
+      flex-shrink: 0;
+      background: #21262d;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 5px;
+      padding: 3px 9px;
+      font-size: 11px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #btn-clear:active { background: #30363d; }
+
+    /* ── テーブルラッパー ── */
+    #tbl-wrap {
+      flex: 1;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    /* ── テーブル ── */
+    table {
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed;
+      font-size: 11px;
+    }
+
+    /* ── ヘッダー行 1: 列名 ── */
+    thead tr.row-labels th {
+      position: sticky;
+      top: 0;
+      height: 30px;
+      padding: 0 6px;
+      background: #161b22;
+      color: #58a6ff;
+      font-size: 10px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-bottom: 1px solid #21262d;
+      border-right: 1px solid #21262d;
+      z-index: 3;
+    }
+
+    /* ── ヘッダー行 2: フィルター入力 ── */
+    thead tr.row-filters th {
+      position: sticky;
+      top: 30px;
+      height: 28px;
+      padding: 3px 3px;
+      background: #0d1117;
+      border-bottom: 2px solid #30363d;
+      border-right: 1px solid #21262d;
+      z-index: 3;
+    }
+    thead tr.row-filters th input {
+      width: 100%;
+      height: 22px;
+      background: #161b22;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      padding: 0 4px;
+      font-size: 10px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    thead tr.row-filters th input:focus { border-color: #58a6ff; background: #1c2128; }
+    thead tr.row-filters th input::placeholder { color: #484f58; }
+
+    /* ── データ行 ── */
+    tbody tr.data-row td {
+      height: 34px;
+      padding: 0 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border-bottom: 1px solid #21262d;
+      border-right: 1px solid #21262d;
+      color: #c9d1d9;
+      font-size: 11px;
+      background: #0d1117;
+      vertical-align: middle;
+    }
+    tbody tr.data-row.row-even td { background: #111820; }
+
+    /* ── 固定列 (先頭 3 列) ── */
+    .pin-1 { position: sticky !important; left: 0;    z-index: 2; }
+    .pin-2 { position: sticky !important; left: 100px; z-index: 2; }
+    .pin-3 { position: sticky !important; left: 230px; z-index: 2; }
+
+    /* 固定列の背景 (row でまとめて上書き) */
+    tbody tr.data-row.row-odd  .pin-1,
+    tbody tr.data-row.row-odd  .pin-2,
+    tbody tr.data-row.row-odd  .pin-3 { background: #131920; }
+    tbody tr.data-row.row-even .pin-1,
+    tbody tr.data-row.row-even .pin-2,
+    tbody tr.data-row.row-even .pin-3 { background: #171e28; }
+
+    /* 固定列とヘッダーの交差 */
+    thead tr.row-labels th.pin-1,
+    thead tr.row-labels th.pin-2,
+    thead tr.row-labels th.pin-3 { z-index: 6; background: #161b22; }
+    thead tr.row-filters th.pin-1,
+    thead tr.row-filters th.pin-2,
+    thead tr.row-filters th.pin-3 { z-index: 6; background: #0d1117; }
+
+    /* 固定列右端に仕切り線 */
+    .pin-3 { border-right: 2px solid #388bfd !important; }
+
+    /* ── スペーサー行 ── */
+    tbody tr.vspacer td {
+      padding: 0; border: none; background: transparent !important;
+    }
+
+    /* ── ローディング ── */
+    #loading {
+      position: fixed; inset: 0;
+      background: #0d1117;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      gap: 12px; z-index: 100;
+      color: #58a6ff; font-size: 14px;
+    }
+    #loading-bar-wrap {
+      width: 200px; height: 4px;
+      background: #21262d; border-radius: 2px; overflow: hidden;
+    }
+    #loading-bar {
+      height: 100%; background: #388bfd; border-radius: 2px;
+      transition: width 0.2s;
+      width: 0%;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="portrait-msg">
+    <div class="icon">📱↩️</div>
+    <p>画面を横向きにしてください</p>
+    <small>Please rotate to landscape mode</small>
+  </div>
+
+  <div id="loading">
+    <span>CSVを読み込んでいます…</span>
+    <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
+  </div>
+
+  <div id="app" style="display:none">
+    <div id="toolbar">
+      <span id="toolbar-title">LISTeditor</span>
+      <span id="info">─</span>
+      <span id="filter-badge"></span>
+      <button id="btn-clear">フィルタークリア</button>
+    </div>
+    <div id="tbl-wrap">
+      <table id="tbl">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    'use strict';
+
+    /* ─── 設定 ─── */
+    const ROW_H  = 34;   // データ行の高さ (px)
+    const BUFFER = 20;   // ビューポート上下のバッファ行数
+
+    /* 先頭3列の sticky left 値 */
+    const COL_LEFT = [0, 100, 230];
+
+    /* 列幅プリセット (index → px)。なければ DEFAULT_W */
+    const DEFAULT_W = 82;
+    const COL_W = {
+       0:100,  1:130,  2:80,   3:80,   4:80,
+       5:70,   6:110,  7:145,  8:70,   9:135,
+      10:48,  11:56,  12:48,  13:56,  14:48,
+      15:56,  16:48,  17:56,  18:48,
+      19:58,  20:48,
+      21:82,  22:82,
+      23:135, 24:65,  25:82,  26:82,
+      27:80,  28:80,
+      29:82,  30:78,  31:52,  32:50,
+      33:160, 34:160,
+      35:60,  36:88,  37:135, 38:112, 39:135,
+      40:92,  41:90,  42:135, 43:90,  44:90,
+      45:155, 46:60,  47:82,  48:82,  49:60,
+      50:72,
+    };
+
+    /* ─── 状態 ─── */
+    let headers = [];
+    let colWidths = [];
+    let allData = [];
+    let filteredData = [];
+    let filters = [];
+    let vStart = -1, vEnd = -1;
+
+    /* ─── CSV パーサー ─── */
+    function parseCSV(text) {
+      const rows = [];
+      let i = 0;
+      const n = text.length;
+      while (i < n) {
+        /* 行を切り出す */
+        const fields = [];
+        let cur = '';
+        let inQ = false;
+        while (i < n) {
+          const c = text[i];
+          if (c === '"') {
+            if (inQ && text[i+1] === '"') { cur += '"'; i += 2; }
+            else { inQ = !inQ; i++; }
+          } else if (c === ',' && !inQ) {
+            fields.push(cur.trim());
+            cur = ''; i++;
+          } else if ((c === '\r' || c === '\n') && !inQ) {
+            if (c === '\r' && text[i+1] === '\n') i++;
+            i++;
+            break;
+          } else {
+            cur += c; i++;
+          }
+        }
+        fields.push(cur.trim());
+        if (fields.length > 1 || fields[0] !== '') rows.push(fields);
+      }
+      return rows;
+    }
+
+    /* ─── ヘッダー構築 ─── */
+    function buildHeader() {
+      const numCols = headers.length;
+      colWidths = headers.map((_, i) => COL_W[i] ?? DEFAULT_W);
+
+      const thead = document.getElementById('thead');
+
+      /* 行 1: 列名 */
+      const labelRow = document.createElement('tr');
+      labelRow.className = 'row-labels';
+
+      /* 行 2: フィルター */
+      const filterRow = document.createElement('tr');
+      filterRow.className = 'row-filters';
+
+      for (let i = 0; i < numCols; i++) {
+        const w = colWidths[i];
+        const pinClass = i < 3 ? ` pin-${i+1}` : '';
+
+        /* ラベルセル */
+        const lth = document.createElement('th');
+        lth.className = pinClass;
+        lth.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
+        if (i < 3) lth.style.left = COL_LEFT[i] + 'px';
+        const label = headers[i] || `(${i+1})`;
+        lth.textContent = label;
+        lth.title = label;
+        labelRow.appendChild(lth);
+
+        /* フィルターセル */
+        const fth = document.createElement('th');
+        fth.className = pinClass;
+        fth.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
+        if (i < 3) fth.style.left = COL_LEFT[i] + 'px';
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.placeholder = '検索';
+        inp.autocomplete = 'off';
+        inp.autocorrect = 'off';
+        inp.autocapitalize = 'none';
+        inp.spellcheck = false;
+        inp.dataset.col = i;
+        inp.addEventListener('input', onFilterInput);
+        fth.appendChild(inp);
+        filterRow.appendChild(fth);
+      }
+
+      thead.appendChild(labelRow);
+      thead.appendChild(filterRow);
+    }
+
+    /* ─── フィルター ─── */
+    let filterTimers = {};
+
+    function onFilterInput(e) {
+      const col = +e.target.dataset.col;
+      filters[col] = e.target.value.toLowerCase().trim();
+      clearTimeout(filterTimers[col]);
+      filterTimers[col] = setTimeout(applyFilters, 200);
+    }
+
+    function applyFilters() {
+      const active = [];
+      for (let i = 0; i < filters.length; i++) {
+        if (filters[i]) active.push({ col: i, val: filters[i] });
+      }
+
+      if (active.length === 0) {
+        filteredData = allData;
+      } else {
+        filteredData = allData.filter(row => {
+          for (const { col, val } of active) {
+            if (!(row[col] ?? '').toLowerCase().includes(val)) return false;
+          }
+          return true;
+        });
+      }
+
+      document.getElementById('info').textContent =
+        `${filteredData.length.toLocaleString()} / ${allData.length.toLocaleString()} 件`;
+
+      const badge = document.getElementById('filter-badge');
+      badge.textContent = active.length > 0 ? `フィルター: ${active.length}` : '';
+
+      vStart = -1; vEnd = -1;
+      renderVisible();
+    }
+
+    /* ─── バーチャルスクロール描画 ─── */
+    function renderVisible() {
+      const wrap = document.getElementById('tbl-wrap');
+      const tbody = document.getElementById('tbody');
+      const scrollTop = wrap.scrollTop;
+      const clientH  = wrap.clientHeight;
+      const total = filteredData.length;
+
+      const newStart = Math.max(0, Math.floor(scrollTop / ROW_H) - BUFFER);
+      const newEnd   = Math.min(total, Math.ceil((scrollTop + clientH) / ROW_H) + BUFFER);
+
+      if (newStart === vStart && newEnd === vEnd) return;
+      vStart = newStart;
+      vEnd   = newEnd;
+
+      const numCols = headers.length;
+      const frag = document.createDocumentFragment();
+
+      /* 上スペーサー */
+      const topH = newStart * ROW_H;
+      if (topH > 0) {
+        const sp = document.createElement('tr');
+        sp.className = 'vspacer';
+        const td = document.createElement('td');
+        td.colSpan = numCols;
+        td.style.height = topH + 'px';
+        sp.appendChild(td);
+        frag.appendChild(sp);
+      }
+
+      /* 表示行 */
+      for (let r = newStart; r < newEnd; r++) {
+        const rowData = filteredData[r];
+        const tr = document.createElement('tr');
+        tr.className = 'data-row ' + (r % 2 === 0 ? 'row-even' : 'row-odd');
+
+        for (let c = 0; c < numCols; c++) {
+          const td = document.createElement('td');
+          const w = colWidths[c];
+          td.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
+          if (c < 3) {
+            td.className = 'pin-' + (c + 1);
+            td.style.left = COL_LEFT[c] + 'px';
+          }
+          const val = rowData[c] ?? '';
+          td.textContent = val;
+          if (val.length > 10) td.title = val;
+          tr.appendChild(td);
+        }
+        frag.appendChild(tr);
+      }
+
+      /* 下スペーサー */
+      const botH = Math.max(0, total - newEnd) * ROW_H;
+      if (botH > 0) {
+        const sp = document.createElement('tr');
+        sp.className = 'vspacer';
+        const td = document.createElement('td');
+        td.colSpan = numCols;
+        td.style.height = botH + 'px';
+        sp.appendChild(td);
+        frag.appendChild(sp);
+      }
+
+      tbody.innerHTML = '';
+      tbody.appendChild(frag);
+    }
+
+    /* ─── スクロールリスナー ─── */
+    function setupScroll() {
+      const wrap = document.getElementById('tbl-wrap');
+      let rafId = null;
+      wrap.addEventListener('scroll', () => {
+        if (rafId) return;
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          renderVisible();
+        });
+      }, { passive: true });
+    }
+
+    /* ─── フィルタークリア ─── */
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      filters = new Array(headers.length).fill('');
+      document.querySelectorAll('thead tr.row-filters input').forEach(inp => { inp.value = ''; });
+      applyFilters();
+    });
+
+    /* ─── 初期化 ─── */
+    async function init() {
+      const bar = document.getElementById('loading-bar');
+      bar.style.width = '20%';
+
+      const resp = await fetch('data.csv');
+      if (!resp.ok) throw new Error('CSV取得失敗: ' + resp.status);
+
+      bar.style.width = '50%';
+
+      const text = await resp.text();
+      bar.style.width = '70%';
+
+      const rows = parseCSV(text);
+      bar.style.width = '90%';
+
+      if (rows.length < 2) throw new Error('データが空です');
+
+      headers = rows[0];
+      allData = rows.slice(1);
+      filters = new Array(headers.length).fill('');
+
+      /* 列数を揃える */
+      const nCols = headers.length;
+      for (const row of allData) {
+        while (row.length < nCols) row.push('');
+      }
+
+      buildHeader();
+      filteredData = allData;
+
+      document.getElementById('info').textContent =
+        `${allData.length.toLocaleString()} / ${allData.length.toLocaleString()} 件`;
+
+      bar.style.width = '100%';
+      await new Promise(r => setTimeout(r, 150));
+
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+
+      setupScroll();
+      renderVisible();
+    }
+
+    init().catch(err => {
+      const el = document.getElementById('loading');
+      el.innerHTML = `<span style="color:#f78166">エラー: ${err.message}</span>`;
+    });
+
+  })();
+  </script>
+</body>
+</html>
