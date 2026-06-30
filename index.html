@@ -14,78 +14,151 @@
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
       background: #0d1117;
+      color: #c9d1d9;
+      -webkit-text-size-adjust: 100%;
     }
 
-    /* ── 縦向きのとき回転を促す ── */
-    #portrait-msg {
-      display: none;
+    /* ══════════════════════════════
+       アップロード画面
+    ══════════════════════════════ */
+    #upload-screen {
       position: fixed; inset: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       background: #0d1117;
-      flex-direction: column;
-      justify-content: center; align-items: center;
-      gap: 16px; z-index: 200;
-    }
-    #portrait-msg .icon { font-size: 48px; }
-    #portrait-msg p { color: #c9d1d9; font-size: 16px; }
-    #portrait-msg small { color: #8b949e; font-size: 12px; }
-
-    @media (orientation: portrait) {
-      #portrait-msg { display: flex; }
-      #app { visibility: hidden; }
+      z-index: 90;
     }
 
-    /* ── アプリ全体 ── */
-    #app {
+    .upload-box {
       display: flex;
       flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 36px 32px;
+      border: 2px dashed #30363d;
+      border-radius: 16px;
+      max-width: 320px;
+      width: 90%;
+    }
+
+    .upload-icon { font-size: 44px; }
+    .upload-title { font-size: 18px; font-weight: 700; color: #c9d1d9; }
+    .upload-hint  { font-size: 12px; color: #8b949e; text-align: center; line-height: 1.5; }
+
+    label.btn-primary {
+      display: inline-block;
+      background: #238636;
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    label.btn-primary:active { background: #2ea043; }
+
+    input[type="file"] { display: none; }
+
+    /* ══════════════════════════════
+       ローディング
+    ══════════════════════════════ */
+    #loading {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(13,17,23,0.88);
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      gap: 12px;
+      z-index: 200;
+      font-size: 14px;
+      color: #58a6ff;
+    }
+
+    /* ══════════════════════════════
+       メインアプリ
+    ══════════════════════════════ */
+    #app {
+      display: none;
+      flex-direction: column;
       height: 100vh;
-      color: #c9d1d9;
     }
 
     /* ── ツールバー ── */
     #toolbar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       padding: 0 10px;
-      height: 34px;
+      height: 38px;
       background: #161b22;
       border-bottom: 1px solid #21262d;
       flex-shrink: 0;
-      font-size: 11px;
-      white-space: nowrap;
     }
-    #toolbar-title {
-      font-weight: 700;
-      font-size: 13px;
+
+    label.btn-sm {
+      display: inline-block;
+      background: #21262d;
       color: #58a6ff;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    label.btn-sm:active { background: #30363d; }
+
+    #filename {
+      font-size: 11px;
+      color: #c9d1d9;
+      max-width: 100px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       flex-shrink: 0;
     }
+
     #info {
+      font-size: 11px;
       color: #8b949e;
       flex: 1;
       min-width: 0;
       overflow: hidden;
       text-overflow: ellipsis;
+      white-space: nowrap;
     }
+
     #filter-badge {
-      color: #f78166;
+      font-size: 11px;
+      color: #388bfd;
       font-weight: 600;
+      white-space: nowrap;
       flex-shrink: 0;
     }
-    #btn-clear {
-      flex-shrink: 0;
+
+    button.btn-sm {
       background: #21262d;
       color: #c9d1d9;
       border: 1px solid #30363d;
-      border-radius: 5px;
-      padding: 3px 9px;
+      border-radius: 6px;
+      padding: 4px 10px;
       font-size: 11px;
       cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-    #btn-clear:active { background: #30363d; }
+    button.btn-sm:active { background: #30363d; }
 
     /* ── テーブルラッパー ── */
     #tbl-wrap {
@@ -103,49 +176,68 @@
       font-size: 11px;
     }
 
-    /* ── ヘッダー行 1: 列名 ── */
-    thead tr.row-labels th {
+    /* ── ヘッダー行 ── */
+    thead th {
       position: sticky;
       top: 0;
-      height: 30px;
-      padding: 0 6px;
       background: #161b22;
+      border-bottom: 2px solid #388bfd;
+      border-right: 1px solid #21262d;
+      z-index: 3;
+      padding: 0;
+    }
+
+    .th-inner {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 2px 0 6px;
+      gap: 2px;
+    }
+
+    .th-name {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       color: #58a6ff;
       font-size: 10px;
       font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border-bottom: 1px solid #21262d;
-      border-right: 1px solid #21262d;
-      z-index: 3;
+      line-height: 1.2;
     }
 
-    /* ── ヘッダー行 2: フィルター入力 ── */
-    thead tr.row-filters th {
-      position: sticky;
-      top: 30px;
-      height: 28px;
-      padding: 3px 3px;
-      background: #0d1117;
-      border-bottom: 2px solid #30363d;
-      border-right: 1px solid #21262d;
-      z-index: 3;
-    }
-    thead tr.row-filters th input {
-      width: 100%;
+    .th-filter-btn {
+      flex-shrink: 0;
+      width: 22px;
       height: 22px;
-      background: #161b22;
-      color: #c9d1d9;
-      border: 1px solid #30363d;
+      background: none;
+      border: 1px solid transparent;
       border-radius: 4px;
-      padding: 0 4px;
-      font-size: 10px;
-      outline: none;
-      -webkit-appearance: none;
+      color: #484f58;
+      cursor: pointer;
+      font-size: 9px;
+      padding: 0;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    thead tr.row-filters th input:focus { border-color: #58a6ff; background: #1c2128; }
-    thead tr.row-filters th input::placeholder { color: #484f58; }
+    .th-filter-btn:active { background: #21262d; }
+    .th-filter-btn.is-active {
+      color: #388bfd;
+      border-color: #388bfd;
+      background: rgba(56,139,253,0.12);
+    }
+
+    /* ── 固定列 ── */
+    .pin-1 { position: sticky !important; left: 0;    z-index: 2; }
+    .pin-2 { position: sticky !important; left: 100px; z-index: 2; }
+    .pin-3 { position: sticky !important; left: 230px; z-index: 2; }
+
+    thead th.pin-1, thead th.pin-2, thead th.pin-3 { z-index: 6; }
+
+    /* 固定列右端の仕切り */
+    .pin-3, thead th.pin-3 { border-right: 2px solid #388bfd !important; }
 
     /* ── データ行 ── */
     tbody tr.data-row td {
@@ -161,76 +253,218 @@
       background: #0d1117;
       vertical-align: middle;
     }
-    tbody tr.data-row.row-even td { background: #111820; }
 
-    /* ── 固定列 (先頭 3 列) ── */
-    .pin-1 { position: sticky !important; left: 0;    z-index: 2; }
-    .pin-2 { position: sticky !important; left: 100px; z-index: 2; }
-    .pin-3 { position: sticky !important; left: 230px; z-index: 2; }
+    tbody tr.row-even td { background: #111820; }
 
-    /* 固定列の背景 (row でまとめて上書き) */
-    tbody tr.data-row.row-odd  .pin-1,
-    tbody tr.data-row.row-odd  .pin-2,
-    tbody tr.data-row.row-odd  .pin-3 { background: #131920; }
-    tbody tr.data-row.row-even .pin-1,
-    tbody tr.data-row.row-even .pin-2,
-    tbody tr.data-row.row-even .pin-3 { background: #171e28; }
-
-    /* 固定列とヘッダーの交差 */
-    thead tr.row-labels th.pin-1,
-    thead tr.row-labels th.pin-2,
-    thead tr.row-labels th.pin-3 { z-index: 6; background: #161b22; }
-    thead tr.row-filters th.pin-1,
-    thead tr.row-filters th.pin-2,
-    thead tr.row-filters th.pin-3 { z-index: 6; background: #0d1117; }
-
-    /* 固定列右端に仕切り線 */
-    .pin-3 { border-right: 2px solid #388bfd !important; }
+    /* 固定列の背景 (行の奇偶で切り替え) */
+    tbody tr.row-odd  td.pin-1,
+    tbody tr.row-odd  td.pin-2,
+    tbody tr.row-odd  td.pin-3 { background: #131920; }
+    tbody tr.row-even td.pin-1,
+    tbody tr.row-even td.pin-2,
+    tbody tr.row-even td.pin-3 { background: #171e28; }
 
     /* ── スペーサー行 ── */
     tbody tr.vspacer td {
       padding: 0; border: none; background: transparent !important;
     }
 
-    /* ── ローディング ── */
-    #loading {
+    /* ══════════════════════════════
+       フィルタードロップダウン (ボトムシート)
+    ══════════════════════════════ */
+    #fd-overlay {
+      display: none;
       position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 100;
+    }
+
+    #fd-sheet {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      max-height: 78vh;
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      border-radius: 18px 18px 0 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ドラッグハンドル */
+    #fd-handle {
+      flex-shrink: 0;
+      height: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #fd-handle::after {
+      content: '';
+      width: 36px; height: 4px;
+      background: #30363d;
+      border-radius: 2px;
+    }
+
+    /* ヘッダー */
+    #fd-header {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      padding: 0 16px 10px;
+      gap: 10px;
+    }
+    #fd-col-name {
+      flex: 1;
+      font-size: 15px;
+      font-weight: 700;
+      color: #c9d1d9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    #fd-close-btn {
+      background: #21262d;
+      border: none;
+      color: #8b949e;
+      font-size: 16px;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* 検索 */
+    #fd-search-wrap {
+      flex-shrink: 0;
+      padding: 0 12px 8px;
+    }
+    #fd-search {
+      width: 100%;
+      height: 36px;
       background: #0d1117;
-      display: flex; flex-direction: column;
-      justify-content: center; align-items: center;
-      gap: 12px; z-index: 100;
-      color: #58a6ff; font-size: 14px;
+      color: #c9d1d9;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+      -webkit-appearance: none;
     }
-    #loading-bar-wrap {
-      width: 200px; height: 4px;
-      background: #21262d; border-radius: 2px; overflow: hidden;
+    #fd-search:focus { border-color: #388bfd; }
+    #fd-search::placeholder { color: #484f58; }
+
+    /* すべて選択 */
+    #fd-select-all {
+      flex-shrink: 0;
+      padding: 6px 16px 8px;
+      border-bottom: 1px solid #21262d;
     }
-    #loading-bar {
-      height: 100%; background: #388bfd; border-radius: 2px;
-      transition: width 0.2s;
-      width: 0%;
+    #fd-select-all label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      padding: 2px 0;
     }
+    #fd-select-all label span {
+      font-size: 13px;
+      color: #c9d1d9;
+    }
+
+    /* リスト */
+    #fd-list {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fd-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fd-item:active { background: #21262d; }
+
+    .fd-item input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: #388bfd;
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .fd-item .fd-val {
+      flex: 1;
+      font-size: 13px;
+      color: #c9d1d9;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .fd-item .fd-val.is-empty { color: #484f58; font-style: italic; }
+
+    #fd-more {
+      padding: 8px 16px;
+      font-size: 11px;
+      color: #8b949e;
+      text-align: center;
+      display: none;
+    }
+
+    /* フッター */
+    #fd-footer {
+      flex-shrink: 0;
+      display: flex;
+      gap: 10px;
+      padding: 10px 16px 16px;
+      border-top: 1px solid #21262d;
+    }
+    #fd-footer button {
+      flex: 1;
+      height: 46px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #fd-cancel-btn { background: #21262d; color: #c9d1d9; }
+    #fd-ok-btn     { background: #238636; color: #fff; }
+    #fd-cancel-btn:active { background: #30363d; }
+    #fd-ok-btn:active     { background: #2ea043; }
   </style>
 </head>
 <body>
 
-  <div id="portrait-msg">
-    <div class="icon">📱↩️</div>
-    <p>画面を横向きにしてください</p>
-    <small>Please rotate to landscape mode</small>
+  <!-- ── アップロード画面 ── -->
+  <div id="upload-screen">
+    <div class="upload-box">
+      <div class="upload-icon">📊</div>
+      <div class="upload-title">LISTeditor</div>
+      <label class="btn-primary" for="file-input-init">CSVファイルを選択</label>
+      <div class="upload-hint">ExcelでCSVとして書き出したファイルを選択してください<br>Shift-JIS / UTF-8 に対応</div>
+      <input type="file" id="file-input-init" accept=".csv,text/csv">
+    </div>
   </div>
 
-  <div id="loading">
-    <span>CSVを読み込んでいます…</span>
-    <div id="loading-bar-wrap"><div id="loading-bar"></div></div>
-  </div>
+  <!-- ── ローディング ── -->
+  <div id="loading"><span id="loading-msg">読み込み中…</span></div>
 
-  <div id="app" style="display:none">
+  <!-- ── メインアプリ ── -->
+  <div id="app">
     <div id="toolbar">
-      <span id="toolbar-title">LISTeditor</span>
-      <span id="info">─</span>
+      <label class="btn-sm" for="file-input-reload">CSV更新</label>
+      <input type="file" id="file-input-reload" accept=".csv,text/csv">
+      <span id="filename"></span>
+      <span id="info"></span>
       <span id="filter-badge"></span>
-      <button id="btn-clear">フィルタークリア</button>
+      <button class="btn-sm" id="btn-clear">クリア</button>
     </div>
     <div id="tbl-wrap">
       <table id="tbl">
@@ -240,18 +474,48 @@
     </div>
   </div>
 
+  <!-- ── フィルタードロップダウン ── -->
+  <div id="fd-overlay">
+    <div id="fd-sheet">
+      <div id="fd-handle"></div>
+      <div id="fd-header">
+        <span id="fd-col-name"></span>
+        <button id="fd-close-btn">✕</button>
+      </div>
+      <div id="fd-search-wrap">
+        <input type="text" id="fd-search" placeholder="値を検索…"
+               autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      </div>
+      <div id="fd-select-all">
+        <label>
+          <input type="checkbox" id="fd-all-cb">
+          <span>すべて選択</span>
+        </label>
+      </div>
+      <div id="fd-list"></div>
+      <div id="fd-more"></div>
+      <div id="fd-footer">
+        <button id="fd-cancel-btn">キャンセル</button>
+        <button id="fd-ok-btn">OK</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   (() => {
     'use strict';
 
-    /* ─── 設定 ─── */
-    const ROW_H  = 34;   // データ行の高さ (px)
-    const BUFFER = 20;   // ビューポート上下のバッファ行数
+    /* ═══════════════════════════════════
+       定数
+    ═══════════════════════════════════ */
+    const ROW_H         = 34;
+    const BUFFER        = 20;
+    const MAX_LIST_SHOW = 500;  // ドロップダウンに一度に表示する最大数
 
-    /* 先頭3列の sticky left 値 */
-    const COL_LEFT = [0, 100, 230];
+    /* 先頭 3 列の sticky left 値 */
+    const PIN_LEFT = [0, 100, 230];
 
-    /* 列幅プリセット (index → px)。なければ DEFAULT_W */
+    /* 列幅プリセット */
     const DEFAULT_W = 82;
     const COL_W = {
        0:100,  1:130,  2:80,   3:80,   4:80,
@@ -270,39 +534,61 @@
       50:72,
     };
 
-    /* ─── 状態 ─── */
-    let headers = [];
-    let colWidths = [];
-    let allData = [];
+    /* ═══════════════════════════════════
+       状態
+    ═══════════════════════════════════ */
+    let headers      = [];
+    let colWidths    = [];
+    let allData      = [];
     let filteredData = [];
-    let filters = [];
+    let filterState  = new Map(); // colIndex -> Set<string> (選択値)
     let vStart = -1, vEnd = -1;
 
-    /* ─── CSV パーサー ─── */
+    /* フィルタードロップダウン作業用 */
+    let fd = {
+      colIndex  : -1,
+      allValues : [],   // 全ユニーク値
+      pending   : new Set(), // 編集中の選択セット
+      searchQ   : '',
+    };
+
+    /* ═══════════════════════════════════
+       CSV 読み込み
+    ═══════════════════════════════════ */
+    async function readFile(file) {
+      const buf = await file.arrayBuffer();
+      const u8  = new Uint8Array(buf);
+
+      /* UTF-8 BOM */
+      if (u8[0] === 0xEF && u8[1] === 0xBB && u8[2] === 0xBF)
+        return new TextDecoder('utf-8').decode(buf);
+
+      /* UTF-8 試行 */
+      const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(buf);
+      const bad  = (utf8.match(/�/g) || []).length;
+      if (bad < 3) return utf8;
+
+      /* Shift-JIS フォールバック */
+      return new TextDecoder('shift-jis', { fatal: false }).decode(buf);
+    }
+
     function parseCSV(text) {
       const rows = [];
-      let i = 0;
-      const n = text.length;
+      let i = 0, n = text.length;
       while (i < n) {
-        /* 行を切り出す */
         const fields = [];
-        let cur = '';
-        let inQ = false;
+        let cur = '', inQ = false;
         while (i < n) {
           const c = text[i];
           if (c === '"') {
             if (inQ && text[i+1] === '"') { cur += '"'; i += 2; }
             else { inQ = !inQ; i++; }
           } else if (c === ',' && !inQ) {
-            fields.push(cur.trim());
-            cur = ''; i++;
+            fields.push(cur.trim()); cur = ''; i++;
           } else if ((c === '\r' || c === '\n') && !inQ) {
             if (c === '\r' && text[i+1] === '\n') i++;
-            i++;
-            break;
-          } else {
-            cur += c; i++;
-          }
+            i++; break;
+          } else { cur += c; i++; }
         }
         fields.push(cur.trim());
         if (fields.length > 1 || fields[0] !== '') rows.push(fields);
@@ -310,138 +596,143 @@
       return rows;
     }
 
-    /* ─── ヘッダー構築 ─── */
+    async function loadCSV(file) {
+      showLoading('読み込み中…');
+      try {
+        const text = await readFile(file);
+        const rows = parseCSV(text);
+        if (rows.length < 2) throw new Error('データが1行以上必要です');
+
+        headers = rows[0];
+        allData = rows.slice(1);
+        const nCols = headers.length;
+        for (const r of allData) { while (r.length < nCols) r.push(''); }
+
+        colWidths    = headers.map((_, i) => COL_W[i] ?? DEFAULT_W);
+        filterState  = new Map();
+        filteredData = allData;
+        vStart = -1; vEnd = -1;
+
+        buildHeader();
+        updateInfo();
+
+        document.getElementById('filename').textContent = file.name;
+        document.getElementById('upload-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        hideLoading();
+
+        renderVisible();
+      } catch (err) {
+        hideLoading();
+        alert('CSVの読み込みに失敗しました:\n' + err.message);
+      }
+    }
+
+    /* ═══════════════════════════════════
+       ヘッダー構築
+    ═══════════════════════════════════ */
     function buildHeader() {
-      const numCols = headers.length;
-      colWidths = headers.map((_, i) => COL_W[i] ?? DEFAULT_W);
+      const thead  = document.getElementById('thead');
+      thead.innerHTML = '';
+      const tr = document.createElement('tr');
 
-      const thead = document.getElementById('thead');
+      for (let i = 0; i < headers.length; i++) {
+        const w     = colWidths[i];
+        const label = headers[i] || `(${i + 1})`;
 
-      /* 行 1: 列名 */
-      const labelRow = document.createElement('tr');
-      labelRow.className = 'row-labels';
+        const th = document.createElement('th');
+        th.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
+        if (i < 3) { th.classList.add('pin-' + (i + 1)); th.style.left = PIN_LEFT[i] + 'px'; }
 
-      /* 行 2: フィルター */
-      const filterRow = document.createElement('tr');
-      filterRow.className = 'row-filters';
+        const inner = document.createElement('div');
+        inner.className = 'th-inner';
 
-      for (let i = 0; i < numCols; i++) {
-        const w = colWidths[i];
-        const pinClass = i < 3 ? ` pin-${i+1}` : '';
+        const name = document.createElement('span');
+        name.className = 'th-name';
+        name.textContent = label;
+        name.title = label;
 
-        /* ラベルセル */
-        const lth = document.createElement('th');
-        lth.className = pinClass;
-        lth.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
-        if (i < 3) lth.style.left = COL_LEFT[i] + 'px';
-        const label = headers[i] || `(${i+1})`;
-        lth.textContent = label;
-        lth.title = label;
-        labelRow.appendChild(lth);
+        const btn = document.createElement('button');
+        btn.className   = 'th-filter-btn';
+        btn.textContent = '▼';
+        btn.title       = label + ' のフィルター';
+        btn.dataset.col = i;
+        btn.addEventListener('click', e => { e.stopPropagation(); openFD(+btn.dataset.col); });
 
-        /* フィルターセル */
-        const fth = document.createElement('th');
-        fth.className = pinClass;
-        fth.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
-        if (i < 3) fth.style.left = COL_LEFT[i] + 'px';
-        const inp = document.createElement('input');
-        inp.type = 'text';
-        inp.placeholder = '検索';
-        inp.autocomplete = 'off';
-        inp.autocorrect = 'off';
-        inp.autocapitalize = 'none';
-        inp.spellcheck = false;
-        inp.dataset.col = i;
-        inp.addEventListener('input', onFilterInput);
-        fth.appendChild(inp);
-        filterRow.appendChild(fth);
+        inner.appendChild(name);
+        inner.appendChild(btn);
+        th.appendChild(inner);
+        tr.appendChild(th);
       }
-
-      thead.appendChild(labelRow);
-      thead.appendChild(filterRow);
+      thead.appendChild(tr);
     }
 
-    /* ─── フィルター ─── */
-    let filterTimers = {};
-
-    function onFilterInput(e) {
-      const col = +e.target.dataset.col;
-      filters[col] = e.target.value.toLowerCase().trim();
-      clearTimeout(filterTimers[col]);
-      filterTimers[col] = setTimeout(applyFilters, 200);
-    }
-
+    /* ═══════════════════════════════════
+       フィルター適用
+    ═══════════════════════════════════ */
     function applyFilters() {
-      const active = [];
-      for (let i = 0; i < filters.length; i++) {
-        if (filters[i]) active.push({ col: i, val: filters[i] });
-      }
-
-      if (active.length === 0) {
+      if (filterState.size === 0) {
         filteredData = allData;
       } else {
         filteredData = allData.filter(row => {
-          for (const { col, val } of active) {
-            if (!(row[col] ?? '').toLowerCase().includes(val)) return false;
+          for (const [col, allowed] of filterState) {
+            if (!allowed.has(row[col] ?? '')) return false;
           }
           return true;
         });
       }
-
-      document.getElementById('info').textContent =
-        `${filteredData.length.toLocaleString()} / ${allData.length.toLocaleString()} 件`;
-
-      const badge = document.getElementById('filter-badge');
-      badge.textContent = active.length > 0 ? `フィルター: ${active.length}` : '';
-
+      updateInfo();
+      refreshFilterButtons();
       vStart = -1; vEnd = -1;
       renderVisible();
     }
 
-    /* ─── バーチャルスクロール描画 ─── */
+    function updateInfo() {
+      document.getElementById('info').textContent =
+        `${filteredData.length.toLocaleString()} / ${allData.length.toLocaleString()} 件`;
+      const n = filterState.size;
+      document.getElementById('filter-badge').textContent = n > 0 ? `▼ ${n}列` : '';
+    }
+
+    function refreshFilterButtons() {
+      document.querySelectorAll('.th-filter-btn').forEach(btn => {
+        btn.classList.toggle('is-active', filterState.has(+btn.dataset.col));
+      });
+    }
+
+    /* ═══════════════════════════════════
+       バーチャルスクロール
+    ═══════════════════════════════════ */
     function renderVisible() {
-      const wrap = document.getElementById('tbl-wrap');
+      const wrap  = document.getElementById('tbl-wrap');
       const tbody = document.getElementById('tbody');
-      const scrollTop = wrap.scrollTop;
-      const clientH  = wrap.clientHeight;
       const total = filteredData.length;
+      const nCols = headers.length;
 
-      const newStart = Math.max(0, Math.floor(scrollTop / ROW_H) - BUFFER);
-      const newEnd   = Math.min(total, Math.ceil((scrollTop + clientH) / ROW_H) + BUFFER);
+      const st = wrap.scrollTop, ch = wrap.clientHeight;
+      const ns = Math.max(0,     Math.floor(st / ROW_H) - BUFFER);
+      const ne = Math.min(total, Math.ceil((st + ch) / ROW_H) + BUFFER);
 
-      if (newStart === vStart && newEnd === vEnd) return;
-      vStart = newStart;
-      vEnd   = newEnd;
+      if (ns === vStart && ne === vEnd) return;
+      vStart = ns; vEnd = ne;
 
-      const numCols = headers.length;
       const frag = document.createDocumentFragment();
 
       /* 上スペーサー */
-      const topH = newStart * ROW_H;
-      if (topH > 0) {
-        const sp = document.createElement('tr');
-        sp.className = 'vspacer';
-        const td = document.createElement('td');
-        td.colSpan = numCols;
-        td.style.height = topH + 'px';
-        sp.appendChild(td);
-        frag.appendChild(sp);
-      }
+      const topH = ns * ROW_H;
+      if (topH > 0) frag.appendChild(mkSpacer(nCols, topH));
 
       /* 表示行 */
-      for (let r = newStart; r < newEnd; r++) {
+      for (let r = ns; r < ne; r++) {
         const rowData = filteredData[r];
         const tr = document.createElement('tr');
         tr.className = 'data-row ' + (r % 2 === 0 ? 'row-even' : 'row-odd');
 
-        for (let c = 0; c < numCols; c++) {
-          const td = document.createElement('td');
-          const w = colWidths[c];
+        for (let c = 0; c < nCols; c++) {
+          const td  = document.createElement('td');
+          const w   = colWidths[c];
           td.style.cssText = `width:${w}px;min-width:${w}px;max-width:${w}px`;
-          if (c < 3) {
-            td.className = 'pin-' + (c + 1);
-            td.style.left = COL_LEFT[c] + 'px';
-          }
+          if (c < 3) { td.classList.add('pin-' + (c + 1)); td.style.left = PIN_LEFT[c] + 'px'; }
           const val = rowData[c] ?? '';
           td.textContent = val;
           if (val.length > 10) td.title = val;
@@ -451,89 +742,197 @@
       }
 
       /* 下スペーサー */
-      const botH = Math.max(0, total - newEnd) * ROW_H;
-      if (botH > 0) {
-        const sp = document.createElement('tr');
-        sp.className = 'vspacer';
-        const td = document.createElement('td');
-        td.colSpan = numCols;
-        td.style.height = botH + 'px';
-        sp.appendChild(td);
-        frag.appendChild(sp);
-      }
+      const botH = Math.max(0, total - ne) * ROW_H;
+      if (botH > 0) frag.appendChild(mkSpacer(nCols, botH));
 
       tbody.innerHTML = '';
       tbody.appendChild(frag);
     }
 
-    /* ─── スクロールリスナー ─── */
-    function setupScroll() {
-      const wrap = document.getElementById('tbl-wrap');
-      let rafId = null;
-      wrap.addEventListener('scroll', () => {
-        if (rafId) return;
-        rafId = requestAnimationFrame(() => {
-          rafId = null;
-          renderVisible();
-        });
-      }, { passive: true });
+    function mkSpacer(cols, h) {
+      const tr = document.createElement('tr');
+      tr.className = 'vspacer';
+      const td = document.createElement('td');
+      td.colSpan = cols;
+      td.style.height = h + 'px';
+      tr.appendChild(td);
+      return tr;
     }
 
-    /* ─── フィルタークリア ─── */
+    /* ═══════════════════════════════════
+       フィルタードロップダウン
+    ═══════════════════════════════════ */
+    function getUniqueValues(col) {
+      const set = new Set();
+      for (const row of allData) set.add(row[col] ?? '');
+      return [...set].sort((a, b) => {
+        if (a === '' && b !== '') return 1;
+        if (a !== '' && b === '') return -1;
+        const na = parseFloat(a.replace(/,/g, '')), nb = parseFloat(b.replace(/,/g, ''));
+        if (!isNaN(na) && !isNaN(nb)) return na - nb;
+        return a.localeCompare(b, 'ja');
+      });
+    }
+
+    function openFD(col) {
+      fd.colIndex  = col;
+      fd.allValues = getUniqueValues(col);
+      fd.searchQ   = '';
+
+      /* 現在の選択状態をコピー */
+      fd.pending = filterState.has(col)
+        ? new Set(filterState.get(col))
+        : new Set(fd.allValues); /* フィルターなし = 全選択 */
+
+      document.getElementById('fd-col-name').textContent = headers[col] || `列${col + 1}`;
+      document.getElementById('fd-search').value = '';
+      renderFDList();
+      document.getElementById('fd-overlay').style.display = 'block';
+      setTimeout(() => document.getElementById('fd-search').focus(), 100);
+    }
+
+    function renderFDList() {
+      const q        = fd.searchQ.toLowerCase();
+      const filtered = q ? fd.allValues.filter(v => v.toLowerCase().includes(q)) : fd.allValues;
+      const items    = filtered.slice(0, MAX_LIST_SHOW);
+      const hasMore  = filtered.length > MAX_LIST_SHOW;
+
+      /* すべて選択チェック状態 */
+      const allCb       = document.getElementById('fd-all-cb');
+      const allChecked  = filtered.length > 0 && filtered.every(v => fd.pending.has(v));
+      const someChecked = filtered.some(v => fd.pending.has(v));
+      allCb.checked       = allChecked;
+      allCb.indeterminate = !allChecked && someChecked;
+
+      /* リスト構築 */
+      const list = document.getElementById('fd-list');
+      const frag = document.createDocumentFragment();
+
+      for (const val of items) {
+        const div = document.createElement('div');
+        div.className = 'fd-item';
+
+        const cb  = document.createElement('input');
+        cb.type    = 'checkbox';
+        cb.checked = fd.pending.has(val);
+        const uid  = 'fdc' + Math.random().toString(36).slice(2);
+        cb.id = uid;
+
+        cb.addEventListener('change', () => {
+          if (cb.checked) fd.pending.add(val);
+          else            fd.pending.delete(val);
+          syncAllCb();
+        });
+
+        /* ラベルをタップしてもチェック切り替え */
+        const lbl = document.createElement('span');
+        lbl.className = 'fd-val' + (val === '' ? ' is-empty' : '');
+        lbl.textContent = val === '' ? '(空白)' : val;
+        lbl.addEventListener('click', () => { cb.checked = !cb.checked; cb.dispatchEvent(new Event('change')); });
+
+        div.appendChild(cb);
+        div.appendChild(lbl);
+        frag.appendChild(div);
+      }
+
+      list.innerHTML = '';
+      list.appendChild(frag);
+
+      const moreEl = document.getElementById('fd-more');
+      if (hasMore) {
+        moreEl.style.display = 'block';
+        moreEl.textContent = `他 ${(filtered.length - MAX_LIST_SHOW).toLocaleString()} 件 — 検索で絞り込んでください`;
+      } else {
+        moreEl.style.display = 'none';
+      }
+    }
+
+    function syncAllCb() {
+      const q        = fd.searchQ.toLowerCase();
+      const filtered = q ? fd.allValues.filter(v => v.toLowerCase().includes(q)) : fd.allValues;
+      const allCb       = document.getElementById('fd-all-cb');
+      const allChecked  = filtered.length > 0 && filtered.every(v => fd.pending.has(v));
+      const someChecked = filtered.some(v => fd.pending.has(v));
+      allCb.checked       = allChecked;
+      allCb.indeterminate = !allChecked && someChecked;
+    }
+
+    function closeFD() {
+      document.getElementById('fd-overlay').style.display = 'none';
+    }
+
+    function applyFD() {
+      const allSelected = fd.allValues.every(v => fd.pending.has(v));
+      if (allSelected) {
+        filterState.delete(fd.colIndex);
+      } else {
+        filterState.set(fd.colIndex, new Set(fd.pending));
+      }
+      applyFilters();
+      closeFD();
+    }
+
+    /* ═══════════════════════════════════
+       イベントリスナー
+    ═══════════════════════════════════ */
+    function onFileChange(e) {
+      const f = e.target.files[0];
+      if (f) loadCSV(f);
+      e.target.value = '';
+    }
+    document.getElementById('file-input-init').addEventListener('change', onFileChange);
+    document.getElementById('file-input-reload').addEventListener('change', onFileChange);
+
+    /* スクロール */
+    let rafId = null;
+    document.getElementById('tbl-wrap').addEventListener('scroll', () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
+    }, { passive: true });
+
+    /* フィルタークリア */
     document.getElementById('btn-clear').addEventListener('click', () => {
-      filters = new Array(headers.length).fill('');
-      document.querySelectorAll('thead tr.row-filters input').forEach(inp => { inp.value = ''; });
+      filterState.clear();
       applyFilters();
     });
 
-    /* ─── 初期化 ─── */
-    async function init() {
-      const bar = document.getElementById('loading-bar');
-      bar.style.width = '20%';
-
-      const resp = await fetch('data.csv');
-      if (!resp.ok) throw new Error('CSV取得失敗: ' + resp.status);
-
-      bar.style.width = '50%';
-
-      const text = await resp.text();
-      bar.style.width = '70%';
-
-      const rows = parseCSV(text);
-      bar.style.width = '90%';
-
-      if (rows.length < 2) throw new Error('データが空です');
-
-      headers = rows[0];
-      allData = rows.slice(1);
-      filters = new Array(headers.length).fill('');
-
-      /* 列数を揃える */
-      const nCols = headers.length;
-      for (const row of allData) {
-        while (row.length < nCols) row.push('');
-      }
-
-      buildHeader();
-      filteredData = allData;
-
-      document.getElementById('info').textContent =
-        `${allData.length.toLocaleString()} / ${allData.length.toLocaleString()} 件`;
-
-      bar.style.width = '100%';
-      await new Promise(r => setTimeout(r, 150));
-
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('app').style.display = 'flex';
-
-      setupScroll();
-      renderVisible();
-    }
-
-    init().catch(err => {
-      const el = document.getElementById('loading');
-      el.innerHTML = `<span style="color:#f78166">エラー: ${err.message}</span>`;
+    /* FD: 検索 */
+    document.getElementById('fd-search').addEventListener('input', e => {
+      fd.searchQ = e.target.value;
+      renderFDList();
     });
+
+    /* FD: すべて選択 */
+    document.getElementById('fd-all-cb').addEventListener('change', e => {
+      const q        = fd.searchQ.toLowerCase();
+      const filtered = q ? fd.allValues.filter(v => v.toLowerCase().includes(q)) : fd.allValues;
+      if (e.target.checked) { for (const v of filtered) fd.pending.add(v); }
+      else                  { for (const v of filtered) fd.pending.delete(v); }
+      renderFDList();
+    });
+
+    /* FD: 閉じる / キャンセル */
+    document.getElementById('fd-close-btn').addEventListener('click',  closeFD);
+    document.getElementById('fd-cancel-btn').addEventListener('click', closeFD);
+
+    /* FD: OK */
+    document.getElementById('fd-ok-btn').addEventListener('click', applyFD);
+
+    /* FD: オーバーレイタップで閉じる */
+    document.getElementById('fd-overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('fd-overlay')) closeFD();
+    });
+
+    /* ═══════════════════════════════════
+       ユーティリティ
+    ═══════════════════════════════════ */
+    function showLoading(msg) {
+      document.getElementById('loading-msg').textContent = msg;
+      document.getElementById('loading').style.display = 'flex';
+    }
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
 
   })();
   </script>
