@@ -252,6 +252,8 @@
       font-size: 11px;
       background: #0d1117;
       vertical-align: middle;
+      cursor: default;
+      -webkit-user-modify: read-only;
     }
 
     tbody tr.row-even td { background: #111820; }
@@ -467,7 +469,7 @@
       <button class="btn-sm" id="btn-clear">クリア</button>
     </div>
     <div id="tbl-wrap">
-      <table id="tbl">
+      <table id="tbl" contenteditable="false">
         <thead id="thead"></thead>
         <tbody id="tbody"></tbody>
       </table>
