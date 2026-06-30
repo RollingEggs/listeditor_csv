@@ -460,7 +460,7 @@
       colWidths = headers.map((h, i) => {
         const key  = h || `__col${i}`;
         const pref = prefs[key];
-        if (typeof pref === 'number' && pref >= 40 && pref <= 400) return pref;
+        if (typeof pref === 'number' && pref >= 1 && pref <= 400) return pref;
         return COL_W_PRESET[i] ?? DEFAULT_W;
       });
     }
@@ -793,7 +793,7 @@
 
         const slider = document.createElement('input');
         slider.type = 'range'; slider.className = 'settings-slider';
-        slider.min = 40; slider.max = 400; slider.step = 5;
+        slider.min = 1; slider.max = 400; slider.step = 1;
         slider.value = curW;
 
         const valEl = document.createElement('span');
