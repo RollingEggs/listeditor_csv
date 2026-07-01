@@ -1078,15 +1078,26 @@
       rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
     }, { passive: true });
 
-    /* 横スクロール時の縦ブレ防止 (overflow切替はスクロール位置リセットを起こすため不使用) */
+    /* 横スクロール: 縦ブレ防止 + 慣性スクロール */
     (function () {
       const wrap = document.getElementById('tbl-wrap');
       let sx = 0, sy = 0, axis = null;
+      let velX = 0, lastT = 0;
+      let rafInertia = null;
+
+      function stopInertia() {
+        if (rafInertia) { cancelAnimationFrame(rafInertia); rafInertia = null; }
+      }
+
       wrap.addEventListener('touchstart', e => {
+        stopInertia();
         sx = e.touches[0].pageX;
         sy = e.touches[0].pageY;
         axis = null;
+        velX = 0;
+        lastT = Date.now();
       }, { passive: true });
+
       wrap.addEventListener('touchmove', e => {
         const cx = e.touches[0].pageX;
         const cy = e.touches[0].pageY;
@@ -1097,12 +1108,31 @@
         }
         if (axis === 'x') {
           e.preventDefault();
-          wrap.scrollLeft += sx - cx;
+          const delta = sx - cx;
+          wrap.scrollLeft += delta;
+          const now = Date.now();
+          const dt = now - lastT;
+          if (dt > 0) velX = delta / dt; /* px/ms */
+          lastT = now;
           sx = cx; sy = cy;
         }
       }, { passive: false });
-      wrap.addEventListener('touchend',    () => { axis = null; }, { passive: true });
-      wrap.addEventListener('touchcancel', () => { axis = null; }, { passive: true });
+
+      wrap.addEventListener('touchend', () => {
+        if (axis === 'x') {
+          let v = velX * 16; /* px/frame at 60fps */
+          function step() {
+            v *= 0.93;
+            if (Math.abs(v) < 0.4) { rafInertia = null; return; }
+            wrap.scrollLeft += v;
+            rafInertia = requestAnimationFrame(step);
+          }
+          rafInertia = requestAnimationFrame(step);
+        }
+        axis = null;
+      }, { passive: true });
+
+      wrap.addEventListener('touchcancel', () => { stopInertia(); axis = null; }, { passive: true });
     })();
 
     /* 行選択 (先頭列タップ) */
