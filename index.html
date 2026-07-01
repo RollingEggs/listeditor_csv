@@ -699,14 +699,15 @@
         col.style.width = w + 'px';
         cg.appendChild(col);
       });
-      updateHideStyles();
+      updateAllWidthStyles();
     }
 
-    function updateHideStyles() {
-      const css = colWidths
-        .map((w, i) => w === 0 ? i : -1).filter(i => i >= 0)
-        .map(i => `#tbl th:nth-child(${i+1}),#tbl td:nth-child(${i+1}){width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:none!important;overflow:hidden}`)
-        .join('');
+    function updateAllWidthStyles() {
+      const css = colWidths.map((w, i) => {
+        const sel = `#tbl th:nth-child(${i+1}),#tbl td:nth-child(${i+1})`;
+        if (w === 0) return `${sel}{width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:none!important;overflow:hidden}`;
+        return `${sel}{width:${w}px!important;min-width:${w}px!important;max-width:${w}px!important}`;
+      }).join('');
       document.getElementById('col-hide-styles').textContent = css;
     }
 
@@ -783,18 +784,8 @@
        列幅更新 (リアルタイム)
     ═══════════════════════════════════ */
     function setColWidth(colIndex, width) {
-      const wasZero = colWidths[colIndex] === 0;
       colWidths[colIndex] = width;
-
-      /* colgroup col */
-      const cols = document.querySelectorAll('#tbl-cg col');
-      if (cols[colIndex]) cols[colIndex].style.width = width + 'px';
-
-      /* th の直接 width でレイアウトを確実に反映 */
-      const ths = document.querySelectorAll('#thead th');
-      if (ths[colIndex]) ths[colIndex].style.width = width + 'px';
-
-      if (wasZero !== (width === 0)) updateHideStyles();
+      updateAllWidthStyles();
       schedSaveWidths();
     }
 
@@ -1046,13 +1037,7 @@
 
     function resetAllWidths() {
       headers.forEach((_, i) => { colWidths[i] = cfg().colPreset[i] ?? cfg().defaultW; });
-      const cols = document.querySelectorAll('#tbl-cg col');
-      const ths  = document.querySelectorAll('#thead th');
-      colWidths.forEach((w, i) => {
-        if (cols[i]) cols[i].style.width = w + 'px';
-        if (ths[i])  ths[i].style.width  = w + 'px';
-      });
-      updateHideStyles();
+      updateAllWidthStyles();
       schedSaveWidths();
       openSettings();
     }
