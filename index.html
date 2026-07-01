@@ -56,24 +56,6 @@
     label.btn-primary:active { background: #2ea043; }
     input[type="file"] { display: none; }
 
-    /* モードセレクト (アップロード画面・ツールバー共通ベース) */
-    .mode-select-upload {
-      width: 100%;
-      background: #21262d; color: #c9d1d9;
-      border: 1px solid #30363d; border-radius: 8px;
-      padding: 10px 14px; font-size: 15px; font-weight: 600;
-      cursor: pointer; -webkit-appearance: none; appearance: none;
-      text-align: center;
-    }
-    .mode-select-sm {
-      background: #21262d; color: #58a6ff;
-      border: 1px solid #30363d; border-radius: 6px;
-      padding: 3px 7px; font-size: 11px; font-weight: 600;
-      cursor: pointer; flex-shrink: 0;
-      -webkit-appearance: none; appearance: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-
     /* ══════════════════════════════
        ローディング
     ══════════════════════════════ */
@@ -422,10 +404,6 @@
     <div class="upload-box">
       <div class="upload-icon">📊</div>
       <div class="upload-title" id="upload-title">LISTeditor</div>
-      <select class="mode-select-upload" id="upload-mode-select">
-        <option value="list">リストエディター</option>
-        <option value="estimate">見積書</option>
-      </select>
       <label class="btn-primary" for="file-input-init">CSVファイルを選択</label>
       <div class="upload-hint" id="upload-hint">ExcelでCSVとして書き出したファイルを選択<br>Shift-JIS / UTF-8 に対応</div>
       <input type="file" id="file-input-init" accept=".csv,text/csv">
@@ -438,10 +416,6 @@
   <!-- メインアプリ -->
   <div id="app">
     <div id="toolbar">
-      <select class="mode-select-sm" id="toolbar-mode-select">
-        <option value="list">LIST</option>
-        <option value="estimate">見積書</option>
-      </select>
       <label class="btn-sm" for="file-input-reload">CSV更新</label>
       <input type="file" id="file-input-reload" accept=".csv,text/csv">
       <span id="filename"></span>
@@ -590,8 +564,6 @@
     function applyModeToUI() {
       document.body.className = 'mode-' + currentMode;
       document.getElementById('upload-title').textContent = cfg().label;
-      document.getElementById('upload-mode-select').value = currentMode;
-      document.getElementById('toolbar-mode-select').value = currentMode;
     }
 
     function switchMode(mode) {
@@ -1096,10 +1068,6 @@
     }
     document.getElementById('file-input-init').addEventListener('change', onFileChange);
     document.getElementById('file-input-reload').addEventListener('change', onFileChange);
-
-    /* モード切替 */
-    document.getElementById('upload-mode-select').addEventListener('change', e => switchMode(e.target.value));
-    document.getElementById('toolbar-mode-select').addEventListener('change', e => switchMode(e.target.value));
 
     /* スクロール */
     let rafId = null;
