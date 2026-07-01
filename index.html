@@ -1034,7 +1034,7 @@
       const q        = fd.searchQ.toLowerCase();
       const filtered = q ? fd.allValues.filter(v => v.toLowerCase().includes(q)) : fd.allValues;
       if (e.target.checked) { for (const v of filtered) fd.pending.add(v); }
-      else                  { for (const v of filtered) fd.pending.delete(v); }
+      else                  { fd.pending.clear(); }
       renderFDList();
     });
     document.getElementById('fd-close-btn').addEventListener('click',  closeFD);
