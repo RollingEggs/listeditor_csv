@@ -858,7 +858,11 @@
       allCb.indeterminate = !allChecked && someChecked;
     }
 
-    function closeFD() { document.getElementById('fd-overlay').style.display = 'none'; }
+    function closeFD() {
+      const sheet = document.querySelector('#fd-overlay .bottom-sheet');
+      if (sheet) { sheet.style.transform = ''; sheet.style.maxHeight = ''; }
+      document.getElementById('fd-overlay').style.display = 'none';
+    }
 
     function applyFD() {
       const allSelected = fd.allValues.every(v => fd.pending.has(v));
@@ -1043,6 +1047,19 @@
     document.getElementById('fd-overlay').addEventListener('click', e => {
       if (e.target === document.getElementById('fd-overlay')) closeFD();
     });
+
+    /* キーボード表示時にフィルターシートを上にずらす */
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', () => {
+        const overlay = document.getElementById('fd-overlay');
+        if (overlay.style.display === 'none') return;
+        const sheet = overlay.querySelector('.bottom-sheet');
+        const vvH = window.visualViewport.height;
+        const kbH = Math.max(0, window.innerHeight - vvH);
+        sheet.style.transform = kbH > 0 ? `translateY(-${kbH}px)` : '';
+        sheet.style.maxHeight = kbH > 0 ? (vvH * 0.92) + 'px' : '';
+      });
+    }
 
     /* ═══════════════════════════════════
        ユーティリティ
