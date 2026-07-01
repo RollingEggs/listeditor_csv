@@ -718,6 +718,7 @@
       headers.forEach((h, i) => {
         const label = h || `(${i + 1})`;
         const th = document.createElement('th');
+        th.style.width = colWidths[i] + 'px';
 
         const inner = document.createElement('div');
         inner.className = 'th-inner';
@@ -785,8 +786,13 @@
       const wasZero = colWidths[colIndex] === 0;
       colWidths[colIndex] = width;
 
+      /* colgroup col */
       const cols = document.querySelectorAll('#tbl-cg col');
       if (cols[colIndex]) cols[colIndex].style.width = width + 'px';
+
+      /* th の直接 width でレイアウトを確実に反映 */
+      const ths = document.querySelectorAll('#thead th');
+      if (ths[colIndex]) ths[colIndex].style.width = width + 'px';
 
       if (wasZero !== (width === 0)) updateHideStyles();
       schedSaveWidths();
@@ -1041,7 +1047,11 @@
     function resetAllWidths() {
       headers.forEach((_, i) => { colWidths[i] = cfg().colPreset[i] ?? cfg().defaultW; });
       const cols = document.querySelectorAll('#tbl-cg col');
-      colWidths.forEach((w, i) => { if (cols[i]) cols[i].style.width = w + 'px'; });
+      const ths  = document.querySelectorAll('#thead th');
+      colWidths.forEach((w, i) => {
+        if (cols[i]) cols[i].style.width = w + 'px';
+        if (ths[i])  ths[i].style.width  = w + 'px';
+      });
       updateHideStyles();
       schedSaveWidths();
       openSettings();
