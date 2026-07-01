@@ -165,16 +165,8 @@
     .th-filter-btn:active { background: #21262d; }
     .th-filter-btn.is-active { color: #388bfd; border-color: #388bfd; background: rgba(56,139,253,0.12); }
 
-    /* ── 固定列 ── */
-    .pin-1 { position: sticky !important; left: 0; z-index: 2; }
-    .pin-2 { position: sticky !important; z-index: 2; }
-    .pin-3 { position: sticky !important; z-index: 2; }
-    thead th.pin-1, thead th.pin-2, thead th.pin-3 { z-index: 6; }
-
-    /* リストモード: 3列目が区切りボーダー */
-    body.mode-list   .pin-3, body.mode-list   thead th.pin-3 { border-right: 2px solid #388bfd !important; }
-    /* 見積書モード: 2列目が区切りボーダー */
-    body.mode-estimate .pin-2, body.mode-estimate thead th.pin-2 { border-right: 2px solid #388bfd !important; }
+    /* ── 先頭列（行選択） ── */
+    td.col-first { cursor: pointer; }
 
     /* ── データ行 ── */
     tbody tr.data-row td {
@@ -185,18 +177,12 @@
       vertical-align: middle; cursor: default; -webkit-user-modify: read-only;
     }
     tbody tr.row-even td { background: #111820; }
-    tbody tr.row-odd  td.pin-1, tbody tr.row-odd  td.pin-2, tbody tr.row-odd  td.pin-3 { background: #131920; }
-    tbody tr.row-even td.pin-1, tbody tr.row-even td.pin-2, tbody tr.row-even td.pin-3 { background: #171e28; }
 
     /* ── スペーサー行 ── */
     tbody tr.vspacer td { padding: 0; border: none; background: transparent !important; }
 
     /* ── 選択行 ── */
     tbody tr.selected-row td { background: #1c2d4a !important; }
-    tbody tr.selected-row td.pin-1,
-    tbody tr.selected-row td.pin-2,
-    tbody tr.selected-row td.pin-3 { background: #223356 !important; }
-    td.pin-1 { cursor: pointer; }
 
     /* ══════════════════════════════
        フィルタードロップダウン (ボトムシート)
@@ -492,7 +478,6 @@
 
     const MODE_CONFIG = {
       list: {
-        pinCols    : 3,
         headerOffset: 0,
         lsKey      : 'listeditor_colwidths_v1',
         defaultW   : 82,
@@ -514,7 +499,6 @@
         },
       },
       estimate: {
-        pinCols    : 2,
         headerOffset: 1,
         lsKey      : 'estimate_colwidths_v1',
         defaultW   : 82,
@@ -599,16 +583,6 @@
         if (i === 0 && w < 40) w = 40;
         return w;
       });
-    }
-
-    /* ═══════════════════════════════════
-       固定列の left 計算
-    ═══════════════════════════════════ */
-    function pinLeftValues() {
-      const pins = cfg().pinCols;
-      const result = [0];
-      for (let i = 1; i < pins; i++) result.push(result[i - 1] + colWidths[i - 1]);
-      return result;
     }
 
     /* ═══════════════════════════════════
@@ -724,14 +698,11 @@
     function buildHeader() {
       const thead   = document.getElementById('thead');
       thead.innerHTML = '';
-      const pl      = pinLeftValues();
-      const pins    = cfg().pinCols;
-      const tr      = document.createElement('tr');
+      const tr = document.createElement('tr');
 
       headers.forEach((h, i) => {
         const label = h || `(${i + 1})`;
         const th = document.createElement('th');
-        if (i < pins) { th.classList.add('pin-' + (i + 1)); th.style.left = pl[i] + 'px'; }
 
         const inner = document.createElement('div');
         inner.className = 'th-inner';
@@ -761,14 +732,6 @@
 
       const cols = document.querySelectorAll('#tbl-cg col');
       if (cols[colIndex]) cols[colIndex].style.width = width + 'px';
-
-      if (colIndex < cfg().pinCols) {
-        const pl = pinLeftValues();
-        for (let p = 0; p < cfg().pinCols; p++) {
-          const left = pl[p] + 'px';
-          document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = left);
-        }
-      }
 
       if (wasZero !== (width === 0)) updateHideStyles();
       schedSaveWidths();
@@ -814,8 +777,6 @@
       const tbody = document.getElementById('tbody');
       const total = filteredData.length;
       const nCols = headers.length;
-      const pl    = pinLeftValues();
-      const pins  = cfg().pinCols;
 
       const st = wrap.scrollTop, ch = wrap.clientHeight;
       const ns = Math.max(0,     Math.floor(st / ROW_H) - BUFFER);
@@ -838,7 +799,7 @@
 
         for (let c = 0; c < nCols; c++) {
           const td  = document.createElement('td');
-          if (c < pins) { td.classList.add('pin-' + (c + 1)); td.style.left = pl[c] + 'px'; }
+          if (c === 0) td.classList.add('col-first');
           const val = rowData[c] ?? '';
           td.textContent = val;
           if (val.length > 10) td.title = val;
@@ -1026,10 +987,6 @@
       headers.forEach((_, i) => { colWidths[i] = cfg().colPreset[i] ?? cfg().defaultW; });
       const cols = document.querySelectorAll('#tbl-cg col');
       colWidths.forEach((w, i) => { if (cols[i]) cols[i].style.width = w + 'px'; });
-      const pl   = pinLeftValues();
-      for (let p = 0; p < cfg().pinCols; p++) {
-        document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = pl[p] + 'px');
-      }
       updateHideStyles();
       schedSaveWidths();
       openSettings();
@@ -1073,7 +1030,7 @@
 
     /* 行選択 (先頭列タップ) */
     document.getElementById('tbody').addEventListener('click', e => {
-      const td = e.target.closest('td.pin-1');
+      const td = e.target.closest('td.col-first');
       if (!td) return;
       const tr = td.closest('tr[data-row-index]');
       if (!tr) return;
