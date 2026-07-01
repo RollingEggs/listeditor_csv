@@ -1028,7 +1028,7 @@
       rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
     }, { passive: true });
 
-    /* 横スクロール時の縦ブレ防止 */
+    /* 横スクロール時の縦ブレ防止 (overflow切替はスクロール位置リセットを起こすため不使用) */
     (function () {
       const wrap = document.getElementById('tbl-wrap');
       let sx = 0, sy = 0, axis = null;
@@ -1038,16 +1038,21 @@
         axis = null;
       }, { passive: true });
       wrap.addEventListener('touchmove', e => {
+        const cx = e.touches[0].pageX;
+        const cy = e.touches[0].pageY;
         if (!axis) {
-          const dx = Math.abs(e.touches[0].pageX - sx);
-          const dy = Math.abs(e.touches[0].pageY - sy);
+          const dx = Math.abs(cx - sx);
+          const dy = Math.abs(cy - sy);
           if (dx > 4 || dy > 4) axis = dx >= dy ? 'x' : 'y';
         }
-        if (axis === 'x') wrap.style.overflowY = 'hidden';
-        else              wrap.style.overflowX = 'hidden';
-      }, { passive: true });
-      wrap.addEventListener('touchend',    () => { wrap.style.overflowY = ''; wrap.style.overflowX = ''; }, { passive: true });
-      wrap.addEventListener('touchcancel', () => { wrap.style.overflowY = ''; wrap.style.overflowX = ''; }, { passive: true });
+        if (axis === 'x') {
+          e.preventDefault();
+          wrap.scrollLeft += sx - cx;
+          sx = cx; sy = cy;
+        }
+      }, { passive: false });
+      wrap.addEventListener('touchend',    () => { axis = null; }, { passive: true });
+      wrap.addEventListener('touchcancel', () => { axis = null; }, { passive: true });
     })();
 
     /* 行選択 (先頭列タップ) */
