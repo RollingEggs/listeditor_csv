@@ -281,8 +281,8 @@
     .fd-val.is-empty { color: #484f58; font-style: italic; }
     #fd-more { padding: 8px 16px; font-size: 11px; color: #8b949e; text-align: center; display: none; }
     #fd-footer {
-      flex-shrink: 0; display: flex; gap: 10px; padding: 10px 16px 16px;
-      border-top: 1px solid #21262d;
+      flex-shrink: 0; display: flex; gap: 10px; padding: 8px 16px;
+      border-bottom: 1px solid #21262d;
     }
     #fd-footer button {
       flex: 1; height: 46px; border: none; border-radius: 10px;
@@ -449,6 +449,10 @@
         <span id="fd-col-name"></span>
         <button class="sheet-close-btn" id="fd-close-btn">✕</button>
       </div>
+      <div id="fd-footer">
+        <button id="fd-cancel-btn">キャンセル</button>
+        <button id="fd-ok-btn">OK</button>
+      </div>
       <div id="fd-search-wrap">
         <input type="text" id="fd-search" placeholder="値を検索…"
                autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
@@ -458,10 +462,6 @@
       </div>
       <div id="fd-list"></div>
       <div id="fd-more"></div>
-      <div id="fd-footer">
-        <button id="fd-cancel-btn">キャンセル</button>
-        <button id="fd-ok-btn">OK</button>
-      </div>
     </div>
   </div>
 
