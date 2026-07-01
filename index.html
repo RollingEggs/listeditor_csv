@@ -144,8 +144,15 @@
       border-bottom: 2px solid #388bfd;
       border-right: 1px solid #21262d;
       z-index: 3; padding: 0;
-      overflow: hidden;
+      overflow: visible;
     }
+    .resize-handle {
+      position: absolute; right: -3px; top: 0; bottom: 0; width: 10px;
+      cursor: col-resize; z-index: 10; touch-action: none;
+      background: transparent;
+    }
+    .resize-handle:active,
+    .resize-handle.resizing { background: rgba(56,139,253,0.35); }
     .th-inner {
       display: flex; align-items: center;
       height: 36px; padding: 0 2px 0 6px; gap: 2px;
@@ -717,10 +724,50 @@
         btn.dataset.col = i;
         btn.addEventListener('click', e => { e.stopPropagation(); openFD(+btn.dataset.col); });
 
+        const handle = document.createElement('div');
+        handle.className = 'resize-handle';
+        attachResizeHandle(handle, i);
+
         inner.appendChild(name); inner.appendChild(btn);
-        th.appendChild(inner); tr.appendChild(th);
+        th.appendChild(inner); th.appendChild(handle); tr.appendChild(th);
       });
       thead.appendChild(tr);
+    }
+
+    function attachResizeHandle(handle, colIndex) {
+      let startX = 0, startW = 0;
+      const MIN_W = colIndex === 0 ? 40 : 0;
+
+      function onMove(clientX) {
+        const dx = clientX - startX;
+        const newW = Math.max(MIN_W, Math.round(startW + dx));
+        setColWidth(colIndex, newW);
+        /* 設定パネルが開いていれば値を同期 */
+        const slider = document.querySelector(`.settings-slider[data-col="${colIndex}"]`);
+        if (slider) {
+          slider.value = newW;
+          const valEl = slider.nextElementSibling;
+          if (valEl) { valEl.textContent = newW === 0 ? '非表示' : newW + 'px'; valEl.style.color = newW === 0 ? '#f78166' : '#58a6ff'; }
+        }
+      }
+
+      handle.addEventListener('touchstart', e => {
+        e.stopPropagation();
+        startX = e.touches[0].clientX;
+        startW = colWidths[colIndex];
+        handle.classList.add('resizing');
+      }, { passive: true });
+
+      handle.addEventListener('touchmove', e => {
+        e.stopPropagation();
+        e.preventDefault();
+        onMove(e.touches[0].clientX);
+      }, { passive: false });
+
+      handle.addEventListener('touchend', e => {
+        e.stopPropagation();
+        handle.classList.remove('resizing');
+      }, { passive: true });
     }
 
     /* ═══════════════════════════════════
@@ -939,8 +986,8 @@
 
         const slider = document.createElement('input');
         slider.type = 'range'; slider.className = 'settings-slider';
-        slider.min = i === 0 ? 40 : 0; slider.max = 400; slider.step = 5;
-        slider.value = curW;
+        slider.min = i === 0 ? 40 : 0; slider.max = 600; slider.step = 5;
+        slider.value = curW; slider.dataset.col = i;
 
         const valEl = document.createElement('span');
         valEl.className = 'settings-val';
