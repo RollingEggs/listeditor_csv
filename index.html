@@ -188,6 +188,13 @@
     /* ── スペーサー行 ── */
     tbody tr.vspacer td { padding: 0; border: none; background: transparent !important; }
 
+    /* ── 選択行 ── */
+    tbody tr.selected-row td { background: #1c2d4a !important; }
+    tbody tr.selected-row td.pin-1,
+    tbody tr.selected-row td.pin-2,
+    tbody tr.selected-row td.pin-3 { background: #223356 !important; }
+    td.pin-1 { cursor: pointer; }
+
     /* ══════════════════════════════
        フィルタードロップダウン (ボトムシート)
     ══════════════════════════════ */
@@ -281,16 +288,22 @@
       padding: 0 16px 12px; gap: 10px;
     }
     #settings-title { flex: 1; font-size: 15px; font-weight: 700; color: #c9d1d9; }
-    #settings-reset-all {
-      background: none; color: #f78166;
-      border: 1px solid #f78166; border-radius: 6px;
-      padding: 4px 10px; font-size: 11px; font-weight: 600;
-      cursor: pointer; white-space: nowrap;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #settings-reset-all:active { background: rgba(247,129,102,0.1); }
 
     #settings-list { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+    #settings-footer {
+      flex-shrink: 0; padding: 12px 16px 16px;
+      border-top: 1px solid #21262d;
+    }
+    #settings-reset-all {
+      width: 100%; height: 46px;
+      background: none; color: #f78166;
+      border: 1px solid #f78166; border-radius: 10px;
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+    #settings-reset-all:active { background: rgba(247,129,102,0.1); }
 
     .settings-item {
       display: flex; align-items: center;
@@ -320,6 +333,25 @@
       -webkit-tap-highlight-color: transparent;
     }
     .settings-reset-btn:active { color: #388bfd; }
+
+    /* ── 必須バッジ ── */
+    .settings-required-badge {
+      font-size: 9px; color: #f78166;
+      border: 1px solid #f78166; border-radius: 3px;
+      padding: 1px 4px; flex-shrink: 0; white-space: nowrap;
+    }
+
+    /* ── コピートースト ── */
+    #copy-toast {
+      position: fixed; bottom: 80px; left: 50%;
+      transform: translateX(-50%);
+      background: #238636; color: #fff;
+      padding: 10px 20px; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s;
+      z-index: 300; white-space: nowrap;
+    }
+    #copy-toast.show { opacity: 1; }
   </style>
 </head>
 <body>
@@ -358,6 +390,9 @@
     </div>
   </div>
 
+  <!-- コピートースト -->
+  <div id="copy-toast">コピーしました</div>
+
   <!-- フィルタードロップダウン -->
   <div id="fd-overlay" class="bottom-overlay">
     <div class="bottom-sheet">
@@ -388,10 +423,12 @@
       <div class="sheet-handle"></div>
       <div id="settings-header">
         <span id="settings-title">列幅設定</span>
-        <button id="settings-reset-all">全列リセット</button>
         <button class="sheet-close-btn" id="settings-close-btn">✕</button>
       </div>
       <div id="settings-list"></div>
+      <div id="settings-footer">
+        <button id="settings-reset-all">全列リセット</button>
+      </div>
     </div>
   </div>
 
@@ -438,6 +475,8 @@
     /* フィルタードロップダウン作業用 */
     let fd = { colIndex: -1, allValues: [], pending: new Set(), searchQ: '' };
 
+    let selectedRowIndex = -1;
+
     /* ═══════════════════════════════════
        LocalStorage (列幅)
     ═══════════════════════════════════ */
@@ -461,8 +500,9 @@
       colWidths = headers.map((h, i) => {
         const key  = h || `__col${i}`;
         const pref = prefs[key];
-        if (typeof pref === 'number' && pref >= 0 && pref <= 400) return pref;
-        return COL_W_PRESET[i] ?? DEFAULT_W;
+        let w = (typeof pref === 'number' && pref >= 0 && pref <= 400) ? pref : (COL_W_PRESET[i] ?? DEFAULT_W);
+        if (i === 0 && w < 40) w = 40;
+        return w;
       });
     }
 
@@ -632,6 +672,7 @@
         });
       updateInfo();
       refreshFilterButtons();
+      selectedRowIndex = -1;
       vStart = -1; vEnd = -1;
       renderVisible();
     }
@@ -675,6 +716,8 @@
         const rowData = filteredData[r];
         const tr = document.createElement('tr');
         tr.className = 'data-row ' + (r % 2 === 0 ? 'row-even' : 'row-odd');
+        tr.dataset.rowIndex = r;
+        if (r === selectedRowIndex) tr.classList.add('selected-row');
 
         for (let c = 0; c < nCols; c++) {
           const td  = document.createElement('td');
@@ -808,7 +851,7 @@
 
         const slider = document.createElement('input');
         slider.type = 'range'; slider.className = 'settings-slider';
-        slider.min = 0; slider.max = 400; slider.step = 5;
+        slider.min = i === 0 ? 40 : 0; slider.max = 400; slider.step = 5;
         slider.value = curW;
 
         const valEl = document.createElement('span');
@@ -834,7 +877,14 @@
           setColWidth(i, defaultW);
         });
 
-        item.appendChild(nameEl); item.appendChild(slider);
+        item.appendChild(nameEl);
+        if (i === 0) {
+          const badge = document.createElement('span');
+          badge.className = 'settings-required-badge';
+          badge.textContent = '必須';
+          item.appendChild(badge);
+        }
+        item.appendChild(slider);
         item.appendChild(valEl);  item.appendChild(resetBtn);
         frag.appendChild(item);
       });
@@ -844,6 +894,26 @@
     }
 
     function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
+
+    let toastTimer = null;
+    function showToast(msg) {
+      const el = document.getElementById('copy-toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    }
+
+    function selectRow(r) {
+      selectedRowIndex = r;
+      vStart = -1; vEnd = -1;
+      renderVisible();
+      const rowData = filteredData[r];
+      if (!rowData) return;
+      navigator.clipboard.writeText(rowData.join('\t'))
+        .then(() => showToast('コピーしました'))
+        .catch(() => showToast('コピー失敗'));
+    }
 
     function resetAllWidths() {
       headers.forEach((_, i) => { colWidths[i] = COL_W_PRESET[i] ?? DEFAULT_W; });
@@ -873,6 +943,15 @@
       if (rafId) return;
       rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
     }, { passive: true });
+
+    /* 行選択 (レコード番号タップ) */
+    document.getElementById('tbody').addEventListener('click', e => {
+      const td = e.target.closest('td.pin-1');
+      if (!td) return;
+      const tr = td.closest('tr[data-row-index]');
+      if (!tr) return;
+      selectRow(+tr.dataset.rowIndex);
+    });
 
     /* フィルタークリア */
     document.getElementById('btn-clear').addEventListener('click', () => {
