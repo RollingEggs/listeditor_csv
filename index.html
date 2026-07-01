@@ -335,10 +335,14 @@
       cursor: pointer; min-width: 0;
     }
     .settings-val {
-      width: 42px; flex-shrink: 0;
+      width: 52px; flex-shrink: 0;
       font-size: 11px; color: #58a6ff;
-      text-align: right; white-space: nowrap;
+      text-align: right;
+      background: #21262d; border: 1px solid #30363d; border-radius: 4px;
+      padding: 2px 4px;
+      -webkit-appearance: none; appearance: none;
     }
+    .settings-val:focus { outline: none; border-color: #388bfd; color: #c9d1d9; }
     .settings-reset-btn {
       flex-shrink: 0; width: 24px; height: 24px;
       background: none; border: none;
@@ -757,7 +761,7 @@
         if (slider) {
           slider.value = newW;
           const valEl = slider.nextElementSibling;
-          if (valEl) { valEl.textContent = newW === 0 ? '非表示' : newW + 'px'; valEl.style.color = newW === 0 ? '#f78166' : '#58a6ff'; }
+          if (valEl) { valEl.value = newW; valEl.style.color = newW === 0 ? '#f78166' : '#58a6ff'; }
         }
       }
 
@@ -994,28 +998,31 @@
         slider.min = i === 0 ? 40 : 0; slider.max = 600; slider.step = 5;
         slider.value = curW; slider.dataset.col = i;
 
-        const valEl = document.createElement('span');
-        valEl.className = 'settings-val';
-        valEl.textContent = curW === 0 ? '非表示' : curW + 'px';
+        const valEl = document.createElement('input');
+        valEl.type = 'number'; valEl.className = 'settings-val';
+        valEl.min = i === 0 ? 40 : 0; valEl.max = 600; valEl.step = 5;
+        valEl.value = curW;
+        valEl.inputMode = 'numeric';
         if (curW === 0) valEl.style.color = '#f78166';
 
         const resetBtn = document.createElement('button');
         resetBtn.className = 'settings-reset-btn';
         resetBtn.textContent = '↩'; resetBtn.title = 'デフォルトに戻す';
 
-        slider.addEventListener('input', () => {
-          const w = +slider.value;
-          valEl.textContent = w === 0 ? '非表示' : w + 'px';
-          valEl.style.color = w === 0 ? '#f78166' : '#58a6ff';
-          setColWidth(i, w);
-        });
+        function applyW(w) {
+          const clamped = Math.max(i === 0 ? 40 : 0, Math.min(600, Math.round(w) || 0));
+          slider.value = clamped;
+          valEl.value  = clamped;
+          valEl.style.color = clamped === 0 ? '#f78166' : '#58a6ff';
+          setColWidth(i, clamped);
+        }
 
-        resetBtn.addEventListener('click', () => {
-          slider.value = defaultW;
-          valEl.textContent = defaultW === 0 ? '非表示' : defaultW + 'px';
-          valEl.style.color = defaultW === 0 ? '#f78166' : '#58a6ff';
-          setColWidth(i, defaultW);
-        });
+        slider.addEventListener('input', () => applyW(+slider.value));
+
+        valEl.addEventListener('change', () => applyW(+valEl.value));
+        valEl.addEventListener('keydown', e => { if (e.key === 'Enter') { valEl.blur(); } });
+
+        resetBtn.addEventListener('click', () => applyW(defaultW));
 
         item.appendChild(nameEl);
         if (i === 0) {
