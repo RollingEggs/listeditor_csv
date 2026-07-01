@@ -708,9 +708,21 @@
       renderVisible();
     }
 
+    function detectModeFromFilename(name) {
+      if (name.includes('LISTeditor')) return 'list';
+      if (name.includes('見積入力'))  return 'estimate';
+      return null;
+    }
+
     async function loadCSV(file) {
       showLoading('読み込み中…');
       try {
+        const detected = detectModeFromFilename(file.name);
+        if (detected && detected !== currentMode) {
+          currentMode = detected;
+          localStorage.setItem('listeditor_mode', currentMode);
+          applyModeToUI();
+        }
         rawCSVText = await readFile(file);
         processCSVText(rawCSVText);
         document.getElementById('filename').textContent = file.name;
