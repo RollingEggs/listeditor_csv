@@ -352,6 +352,35 @@
       z-index: 300; white-space: nowrap;
     }
     #copy-toast.show { opacity: 1; }
+
+    /* ══════════════════════════════
+       検索バー
+    ══════════════════════════════ */
+    #search-bar {
+      flex-shrink: 0;
+      display: none; align-items: center;
+      padding: 5px 8px; gap: 6px;
+      background: #161b22;
+      border-bottom: 1px solid #21262d;
+    }
+    #search-bar.open { display: flex; }
+    #search-input {
+      flex: 1; height: 30px;
+      background: #0d1117; color: #c9d1d9;
+      border: 1px solid #30363d; border-radius: 6px;
+      padding: 0 8px; font-size: 13px; outline: none;
+      -webkit-appearance: none;
+    }
+    #search-input:focus { border-color: #388bfd; }
+    #search-input::placeholder { color: #484f58; }
+    #search-clear-btn {
+      flex-shrink: 0;
+      background: none; border: none; color: #8b949e;
+      font-size: 15px; line-height: 1; cursor: pointer;
+      padding: 4px 2px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-search.is-active { color: #58a6ff; background: rgba(56,139,253,0.12); border-color: #388bfd; }
   </style>
 </head>
 <body>
@@ -378,8 +407,14 @@
       <span id="filename"></span>
       <span id="info"></span>
       <span id="filter-badge"></span>
+      <button class="btn-sm" id="btn-search">🔍</button>
       <button class="btn-sm" id="btn-settings">⚙ 列幅</button>
       <button class="btn-sm" id="btn-clear">クリア</button>
+    </div>
+    <div id="search-bar">
+      <input type="text" id="search-input" placeholder="全列をキーワード検索…"
+             autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
+      <button id="search-clear-btn">✕</button>
     </div>
     <div id="tbl-wrap">
       <table id="tbl" contenteditable="false">
@@ -476,6 +511,8 @@
     let fd = { colIndex: -1, allValues: [], pending: new Set(), searchQ: '' };
 
     let selectedRowIndex = -1;
+    let searchQuery = '';
+    let searchTimer = null;
 
     /* ═══════════════════════════════════
        LocalStorage (列幅)
@@ -663,13 +700,14 @@
        フィルター適用
     ═══════════════════════════════════ */
     function applyFilters() {
-      filteredData = filterState.size === 0 ? allData
-        : allData.filter(row => {
-          for (const [col, allowed] of filterState) {
-            if (!allowed.has(row[col] ?? '')) return false;
-          }
-          return true;
-        });
+      const q = searchQuery.toLowerCase();
+      filteredData = allData.filter(row => {
+        for (const [col, allowed] of filterState) {
+          if (!allowed.has(row[col] ?? '')) return false;
+        }
+        if (q) return row.some(v => (v ?? '').toLowerCase().includes(q));
+        return true;
+      });
       updateInfo();
       refreshFilterButtons();
       selectedRowIndex = -1;
@@ -953,9 +991,33 @@
       selectRow(+tr.dataset.rowIndex);
     });
 
+    /* 検索 */
+    document.getElementById('btn-search').addEventListener('click', () => {
+      const bar = document.getElementById('search-bar');
+      const btn = document.getElementById('btn-search');
+      const isOpen = bar.classList.toggle('open');
+      btn.classList.toggle('is-active', isOpen);
+      if (isOpen) setTimeout(() => document.getElementById('search-input').focus(), 80);
+    });
+    document.getElementById('search-input').addEventListener('input', e => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        searchQuery = e.target.value;
+        applyFilters();
+      }, 150);
+    });
+    document.getElementById('search-clear-btn').addEventListener('click', () => {
+      document.getElementById('search-input').value = '';
+      searchQuery = '';
+      applyFilters();
+    });
+
     /* フィルタークリア */
     document.getElementById('btn-clear').addEventListener('click', () => {
-      filterState.clear(); applyFilters();
+      filterState.clear();
+      searchQuery = '';
+      document.getElementById('search-input').value = '';
+      applyFilters();
     });
 
     /* 設定パネル */
