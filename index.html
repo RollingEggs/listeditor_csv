@@ -1028,6 +1028,28 @@
       rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
     }, { passive: true });
 
+    /* 横スクロール時の縦ブレ防止 */
+    (function () {
+      const wrap = document.getElementById('tbl-wrap');
+      let sx = 0, sy = 0, axis = null;
+      wrap.addEventListener('touchstart', e => {
+        sx = e.touches[0].pageX;
+        sy = e.touches[0].pageY;
+        axis = null;
+      }, { passive: true });
+      wrap.addEventListener('touchmove', e => {
+        if (!axis) {
+          const dx = Math.abs(e.touches[0].pageX - sx);
+          const dy = Math.abs(e.touches[0].pageY - sy);
+          if (dx > 4 || dy > 4) axis = dx >= dy ? 'x' : 'y';
+        }
+        if (axis === 'x') wrap.style.overflowY = 'hidden';
+        else              wrap.style.overflowX = 'hidden';
+      }, { passive: true });
+      wrap.addEventListener('touchend',    () => { wrap.style.overflowY = ''; wrap.style.overflowX = ''; }, { passive: true });
+      wrap.addEventListener('touchcancel', () => { wrap.style.overflowY = ''; wrap.style.overflowX = ''; }, { passive: true });
+    })();
+
     /* 行選択 (先頭列タップ) */
     document.getElementById('tbody').addEventListener('click', e => {
       const td = e.target.closest('td.col-first');
