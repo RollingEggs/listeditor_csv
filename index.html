@@ -56,6 +56,24 @@
     label.btn-primary:active { background: #2ea043; }
     input[type="file"] { display: none; }
 
+    /* モードセレクト (アップロード画面・ツールバー共通ベース) */
+    .mode-select-upload {
+      width: 100%;
+      background: #21262d; color: #c9d1d9;
+      border: 1px solid #30363d; border-radius: 8px;
+      padding: 10px 14px; font-size: 15px; font-weight: 600;
+      cursor: pointer; -webkit-appearance: none; appearance: none;
+      text-align: center;
+    }
+    .mode-select-sm {
+      background: #21262d; color: #58a6ff;
+      border: 1px solid #30363d; border-radius: 6px;
+      padding: 3px 7px; font-size: 11px; font-weight: 600;
+      cursor: pointer; flex-shrink: 0;
+      -webkit-appearance: none; appearance: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
     /* ══════════════════════════════
        ローディング
     ══════════════════════════════ */
@@ -167,11 +185,15 @@
     .th-filter-btn.is-active { color: #388bfd; border-color: #388bfd; background: rgba(56,139,253,0.12); }
 
     /* ── 固定列 ── */
-    .pin-1 { position: sticky !important; left: 0;    z-index: 2; }
+    .pin-1 { position: sticky !important; left: 0; z-index: 2; }
     .pin-2 { position: sticky !important; z-index: 2; }
     .pin-3 { position: sticky !important; z-index: 2; }
     thead th.pin-1, thead th.pin-2, thead th.pin-3 { z-index: 6; }
-    .pin-3, thead th.pin-3 { border-right: 2px solid #388bfd !important; }
+
+    /* リストモード: 3列目が区切りボーダー */
+    body.mode-list   .pin-3, body.mode-list   thead th.pin-3 { border-right: 2px solid #388bfd !important; }
+    /* 見積書モード: 2列目が区切りボーダー */
+    body.mode-estimate .pin-2, body.mode-estimate thead th.pin-2 { border-right: 2px solid #388bfd !important; }
 
     /* ── データ行 ── */
     tbody tr.data-row td {
@@ -393,15 +415,19 @@
     #btn-search.is-active { color: #58a6ff; background: rgba(56,139,253,0.12); border-color: #388bfd; }
   </style>
 </head>
-<body>
+<body class="mode-list">
 
   <!-- アップロード画面 -->
   <div id="upload-screen">
     <div class="upload-box">
       <div class="upload-icon">📊</div>
-      <div class="upload-title">LISTeditor</div>
+      <div class="upload-title" id="upload-title">LISTeditor</div>
+      <select class="mode-select-upload" id="upload-mode-select">
+        <option value="list">リストエディター</option>
+        <option value="estimate">見積書</option>
+      </select>
       <label class="btn-primary" for="file-input-init">CSVファイルを選択</label>
-      <div class="upload-hint">ExcelでCSVとして書き出したファイルを選択<br>Shift-JIS / UTF-8 に対応</div>
+      <div class="upload-hint" id="upload-hint">ExcelでCSVとして書き出したファイルを選択<br>Shift-JIS / UTF-8 に対応</div>
       <input type="file" id="file-input-init" accept=".csv,text/csv">
     </div>
   </div>
@@ -412,6 +438,10 @@
   <!-- メインアプリ -->
   <div id="app">
     <div id="toolbar">
+      <select class="mode-select-sm" id="toolbar-mode-select">
+        <option value="list">LIST</option>
+        <option value="estimate">見積書</option>
+      </select>
       <label class="btn-sm" for="file-input-reload">CSV更新</label>
       <input type="file" id="file-input-reload" accept=".csv,text/csv">
       <span id="filename"></span>
@@ -482,53 +512,104 @@
     'use strict';
 
     /* ═══════════════════════════════════
-       定数・設定
+       モード設定
     ═══════════════════════════════════ */
     const ROW_H         = 34;
     const BUFFER        = 20;
     const MAX_LIST_SHOW = 500;
-    const LS_KEY        = 'listeditor_colwidths_v1';
 
-    const DEFAULT_W = 82;
-    const COL_W_PRESET = {
-       0:100,  1:130,  2:80,   3:80,   4:80,
-       5:70,   6:110,  7:145,  8:70,   9:135,
-      10:48,  11:56,  12:48,  13:56,  14:48,
-      15:56,  16:48,  17:56,  18:48,
-      19:58,  20:48,
-      21:82,  22:82,
-      23:135, 24:65,  25:82,  26:82,
-      27:80,  28:80,
-      29:82,  30:78,  31:52,  32:50,
-      33:160, 34:160,
-      35:60,  36:88,  37:135, 38:112, 39:135,
-      40:92,  41:90,  42:135, 43:90,  44:90,
-      45:155, 46:60,  47:82,  48:82,  49:60,
-      50:72,
+    const MODE_CONFIG = {
+      list: {
+        label      : 'LISTeditor',
+        pinCols    : 3,
+        headerOffset: 0,
+        lsKey      : 'listeditor_colwidths_v1',
+        defaultW   : 82,
+        colPreset  : {
+           0:100,  1:130,  2:80,   3:80,   4:80,
+           5:70,   6:110,  7:145,  8:70,   9:135,
+          10:48,  11:56,  12:48,  13:56,  14:48,
+          15:56,  16:48,  17:56,  18:48,
+          19:58,  20:48,
+          21:82,  22:82,
+          23:135, 24:65,  25:82,  26:82,
+          27:80,  28:80,
+          29:82,  30:78,  31:52,  32:50,
+          33:160, 34:160,
+          35:60,  36:88,  37:135, 38:112, 39:135,
+          40:92,  41:90,  42:135, 43:90,  44:90,
+          45:155, 46:60,  47:82,  48:82,  49:60,
+          50:72,
+        },
+      },
+      estimate: {
+        label      : '見積書',
+        pinCols    : 2,
+        headerOffset: 1,
+        lsKey      : 'estimate_colwidths_v1',
+        defaultW   : 82,
+        colPreset  : {
+           0:120,  1:130,  2:65,   3:100,  4:75,
+           5:80,   6:100,  7:65,   8:80,   9:90,
+          10:80,  11:90,  12:90,  13:80,  14:120,
+          15:50,  16:70,  17:50,  18:70,  19:50,
+          20:70,  21:50,  22:70,  23:50,
+          24:55,  25:50,  26:80,  27:80,
+          28:100, 29:55,  30:80,  31:80,  32:65,
+          33:100, 34:80,  35:100, 36:80,  37:100,
+          38:80,  39:100, 40:80,  41:100, 42:80,
+          43:120, 44:120,
+        },
+      },
     };
 
     /* ═══════════════════════════════════
        状態
     ═══════════════════════════════════ */
+    let currentMode  = localStorage.getItem('listeditor_mode') || 'list';
+    let rawCSVText   = '';
+
     let headers      = [];
-    let colWidths    = [];   // 現在の列幅 (px)
+    let colWidths    = [];
     let allData      = [];
     let filteredData = [];
     let filterState  = new Map();
     let vStart = -1, vEnd = -1;
 
-    /* フィルタードロップダウン作業用 */
     let fd = { colIndex: -1, allValues: [], pending: new Set(), searchQ: '' };
 
     let selectedRowIndex = -1;
-    let searchQuery = '';
-    let searchTimer = null;
+    let searchQuery  = '';
+    let searchTimer  = null;
+
+    /* ═══════════════════════════════════
+       モードヘルパー
+    ═══════════════════════════════════ */
+    function cfg() { return MODE_CONFIG[currentMode]; }
+
+    function applyModeToUI() {
+      document.body.className = 'mode-' + currentMode;
+      document.getElementById('upload-title').textContent = cfg().label;
+      document.getElementById('upload-mode-select').value = currentMode;
+      document.getElementById('toolbar-mode-select').value = currentMode;
+    }
+
+    function switchMode(mode) {
+      if (mode === currentMode) return;
+      currentMode = mode;
+      localStorage.setItem('listeditor_mode', mode);
+      applyModeToUI();
+      /* CSVが読み込まれていれば再パース */
+      if (rawCSVText) {
+        processCSVText(rawCSVText);
+      }
+    }
 
     /* ═══════════════════════════════════
        LocalStorage (列幅)
     ═══════════════════════════════════ */
     function loadWidthPrefs() {
-      try { const s = localStorage.getItem(LS_KEY); return s ? JSON.parse(s) : {}; }
+      try { const s = localStorage.getItem(cfg().lsKey); return s ? JSON.parse(s) : {}; }
       catch { return {}; }
     }
 
@@ -538,7 +619,7 @@
       saveWidthTimer = setTimeout(() => {
         const map = {};
         headers.forEach((h, i) => { map[h || `__col${i}`] = colWidths[i]; });
-        try { localStorage.setItem(LS_KEY, JSON.stringify(map)); } catch {}
+        try { localStorage.setItem(cfg().lsKey, JSON.stringify(map)); } catch {}
       }, 300);
     }
 
@@ -547,7 +628,7 @@
       colWidths = headers.map((h, i) => {
         const key  = h || `__col${i}`;
         const pref = prefs[key];
-        let w = (typeof pref === 'number' && pref >= 0 && pref <= 400) ? pref : (COL_W_PRESET[i] ?? DEFAULT_W);
+        let w = (typeof pref === 'number' && pref >= 0 && pref <= 400) ? pref : (cfg().colPreset[i] ?? cfg().defaultW);
         if (i === 0 && w < 40) w = 40;
         return w;
       });
@@ -557,7 +638,10 @@
        固定列の left 計算
     ═══════════════════════════════════ */
     function pinLeftValues() {
-      return [0, colWidths[0], colWidths[0] + colWidths[1]];
+      const pins = cfg().pinCols;
+      const result = [0];
+      for (let i = 1; i < pins; i++) result.push(result[i - 1] + colWidths[i - 1]);
+      return result;
     }
 
     /* ═══════════════════════════════════
@@ -595,32 +679,41 @@
       return rows;
     }
 
+    function processCSVText(text) {
+      const rows   = parseCSV(text);
+      const offset = cfg().headerOffset;
+      if (rows.length < offset + 2) throw new Error('データが1行以上必要です');
+
+      headers = rows[offset];
+      allData = rows.slice(offset + 1);
+      const nCols = headers.length;
+      for (const r of allData) { while (r.length < nCols) r.push(''); }
+
+      resolveColWidths();
+      filterState   = new Map();
+      filteredData  = allData;
+      selectedRowIndex = -1;
+      searchQuery   = '';
+      document.getElementById('search-input').value = '';
+      document.getElementById('search-bar').classList.remove('open');
+      document.getElementById('btn-search').classList.remove('is-active');
+      vStart = -1; vEnd = -1;
+
+      buildColGroup();
+      buildHeader();
+      updateInfo();
+      document.getElementById('upload-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'flex';
+      hideLoading();
+      renderVisible();
+    }
+
     async function loadCSV(file) {
       showLoading('読み込み中…');
       try {
-        const text = await readFile(file);
-        const rows = parseCSV(text);
-        if (rows.length < 2) throw new Error('データが1行以上必要です');
-
-        headers = rows[0];
-        allData = rows.slice(1);
-        const nCols = headers.length;
-        for (const r of allData) { while (r.length < nCols) r.push(''); }
-
-        resolveColWidths();
-        filterState  = new Map();
-        filteredData = allData;
-        vStart = -1; vEnd = -1;
-
-        buildColGroup();
-        buildHeader();
-        updateInfo();
-
+        rawCSVText = await readFile(file);
+        processCSVText(rawCSVText);
         document.getElementById('filename').textContent = file.name;
-        document.getElementById('upload-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'flex';
-        hideLoading();
-        renderVisible();
       } catch (err) {
         hideLoading();
         alert('CSVの読み込みに失敗しました:\n' + err.message);
@@ -641,7 +734,6 @@
       updateHideStyles();
     }
 
-    /* 幅 0 の列を CSS で完全非表示 */
     function updateHideStyles() {
       const css = colWidths
         .map((w, i) => w === 0 ? i : -1).filter(i => i >= 0)
@@ -651,15 +743,16 @@
     }
 
     function buildHeader() {
-      const thead  = document.getElementById('thead');
+      const thead   = document.getElementById('thead');
       thead.innerHTML = '';
-      const pl = pinLeftValues();
-      const tr = document.createElement('tr');
+      const pl      = pinLeftValues();
+      const pins    = cfg().pinCols;
+      const tr      = document.createElement('tr');
 
       headers.forEach((h, i) => {
         const label = h || `(${i + 1})`;
         const th = document.createElement('th');
-        if (i < 3) { th.classList.add('pin-' + (i + 1)); th.style.left = pl[i] + 'px'; }
+        if (i < pins) { th.classList.add('pin-' + (i + 1)); th.style.left = pl[i] + 'px'; }
 
         const inner = document.createElement('div');
         inner.className = 'th-inner';
@@ -687,22 +780,18 @@
       const wasZero = colWidths[colIndex] === 0;
       colWidths[colIndex] = width;
 
-      /* colgroup の該当列を更新 */
       const cols = document.querySelectorAll('#tbl-cg col');
       if (cols[colIndex]) cols[colIndex].style.width = width + 'px';
 
-      /* 固定列 (pin-1/2/3) の left を更新 */
-      if (colIndex < 3) {
+      if (colIndex < cfg().pinCols) {
         const pl = pinLeftValues();
-        for (let p = 0; p < 3; p++) {
+        for (let p = 0; p < cfg().pinCols; p++) {
           const left = pl[p] + 'px';
           document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = left);
         }
       }
 
-      /* 非表示状態が変わったときだけ CSS を更新 */
       if (wasZero !== (width === 0)) updateHideStyles();
-
       schedSaveWidths();
     }
 
@@ -747,6 +836,7 @@
       const total = filteredData.length;
       const nCols = headers.length;
       const pl    = pinLeftValues();
+      const pins  = cfg().pinCols;
 
       const st = wrap.scrollTop, ch = wrap.clientHeight;
       const ns = Math.max(0,     Math.floor(st / ROW_H) - BUFFER);
@@ -769,7 +859,7 @@
 
         for (let c = 0; c < nCols; c++) {
           const td  = document.createElement('td');
-          if (c < 3) { td.classList.add('pin-' + (c + 1)); td.style.left = pl[c] + 'px'; }
+          if (c < pins) { td.classList.add('pin-' + (c + 1)); td.style.left = pl[c] + 'px'; }
           const val = rowData[c] ?? '';
           td.textContent = val;
           if (val.length > 10) td.title = val;
@@ -897,7 +987,7 @@
 
       headers.forEach((h, i) => {
         const label    = h || `(${i + 1})`;
-        const defaultW = COL_W_PRESET[i] ?? DEFAULT_W;
+        const defaultW = cfg().colPreset[i] ?? cfg().defaultW;
         const curW     = colWidths[i];
 
         const item = document.createElement('div');
@@ -953,6 +1043,19 @@
 
     function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
 
+    function resetAllWidths() {
+      headers.forEach((_, i) => { colWidths[i] = cfg().colPreset[i] ?? cfg().defaultW; });
+      const cols = document.querySelectorAll('#tbl-cg col');
+      colWidths.forEach((w, i) => { if (cols[i]) cols[i].style.width = w + 'px'; });
+      const pl   = pinLeftValues();
+      for (let p = 0; p < cfg().pinCols; p++) {
+        document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = pl[p] + 'px');
+      }
+      updateHideStyles();
+      schedSaveWidths();
+      openSettings();
+    }
+
     let toastTimer = null;
     function showToast(msg) {
       const el = document.getElementById('copy-toast');
@@ -973,19 +1076,6 @@
         .catch(() => showToast('コピー失敗'));
     }
 
-    function resetAllWidths() {
-      headers.forEach((_, i) => { colWidths[i] = COL_W_PRESET[i] ?? DEFAULT_W; });
-      const cols = document.querySelectorAll('#tbl-cg col');
-      colWidths.forEach((w, i) => { if (cols[i]) cols[i].style.width = w + 'px'; });
-      const pl = pinLeftValues();
-      for (let p = 0; p < 3; p++) {
-        document.querySelectorAll(`.pin-${p + 1}`).forEach(el => el.style.left = pl[p] + 'px');
-      }
-      updateHideStyles();
-      schedSaveWidths();
-      openSettings(); // リストを更新
-    }
-
     /* ═══════════════════════════════════
        イベントリスナー
     ═══════════════════════════════════ */
@@ -995,6 +1085,10 @@
     document.getElementById('file-input-init').addEventListener('change', onFileChange);
     document.getElementById('file-input-reload').addEventListener('change', onFileChange);
 
+    /* モード切替 */
+    document.getElementById('upload-mode-select').addEventListener('change', e => switchMode(e.target.value));
+    document.getElementById('toolbar-mode-select').addEventListener('change', e => switchMode(e.target.value));
+
     /* スクロール */
     let rafId = null;
     document.getElementById('tbl-wrap').addEventListener('scroll', () => {
@@ -1002,7 +1096,7 @@
       rafId = requestAnimationFrame(() => { rafId = null; renderVisible(); });
     }, { passive: true });
 
-    /* 行選択 (レコード番号タップ) */
+    /* 行選択 (先頭列タップ) */
     document.getElementById('tbody').addEventListener('click', e => {
       const td = e.target.closest('td.pin-1');
       if (!td) return;
@@ -1077,6 +1171,9 @@
       document.getElementById('loading').style.display = 'flex';
     }
     function hideLoading() { document.getElementById('loading').style.display = 'none'; }
+
+    /* 初期化 */
+    applyModeToUI();
 
   })();
   </script>
